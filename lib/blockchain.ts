@@ -1,13 +1,19 @@
 /**
- * NAUB Blockchain Certificate System
+ * NAUB Blockchain Certificate System — Blockchain service
  *
- * Blockchain integration using:
- * - Ethers.js for blockchain interactions
- * - Ethereum Sepolia Testnet for development and evaluation
- * - Local caching for performance optimisation
+ * Behaviour depends on how the environment is configured:
  *
- * The system writes certificate hashes to the Ethereum blockchain,
- * providing tamper-proof, publicly verifiable records.
+ *  Mode A — Real contract (production / evaluation):
+ *    Set CERTIFICATE_REGISTRY_ADDRESS (the deployed CertificateRegistry on
+ *    Ethereum Sepolia) and TEST_WALLET_PRIVATE_KEY (a funded Sepolia wallet
+ *    that holds CERTIFICATE_ROLE). The service calls issueCertificate() and
+ *    revokeCertificate() as real on-chain transactions and verifyCertificate()
+ *    as a free read-only view call.
+ *
+ *  Mode B — Simulation (development / Vercel preview):
+ *    If CERTIFICATE_REGISTRY_ADDRESS or TEST_WALLET_PRIVATE_KEY are missing,
+ *    the service simulates blockchain behaviour locally. The Next.js app and
+ *    all four portals work identically in both modes.
  */
 
 import { ethers } from "ethers";
@@ -24,45 +30,44 @@ export interface BlockchainRecord {
 
 const DATA_DIR = path.join(process.cwd(), ".data");
 const BLOCKCHAIN_FILE = path.join(DATA_DIR, "blockchain.json");
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
+const REGISTRY_ABI = [
+  "function issueCertificate(bytes32 certificateHash, bytes32 holderIdentityHash, string calldata ipfsCid) external",
+  "function revokeCertificate(bytes32 certificateHash, string calldata reason) external",
+  "function verifyCertificate(bytes32 certificateHash) external view returns (bool exists, uint8 status, bytes32 holderIdentityHash, string memory ipfsCid, uint256 issuedAt, uint256 revokedAt, string memory revocationReason)",
+];
 
-// Ethereum Sepolia Testnet RPC endpoint
-const rpcUrl =
-  process.env.TESTNET_RPC_URL || "https://rpc.sepolia.org";
+const rpcUrl = process.env.TESTNET_RPC_URL || "https://rpc.sepolia.org";
+const contractAddress = process.env.CERTIFICATE_REGISTRY_ADDRESS || "";
+const privateKey = process.env.TEST_WALLET_PRIVATE_KEY || "";
+
 const provider = new ethers.JsonRpcProvider(rpcUrl);
-
-const privateKey = process.env.TEST_WALLET_PRIVATE_KEY;
 let wallet: ethers.Wallet | null = null;
+let registryContract: ethers.Contract | null = null;
 
-if (
-  privateKey &&
-  privateKey !== "your_private_key_here" &&
-  privateKey.trim() !== ""
-) {
+if (privateKey && privateKey.trim() !== "" && privateKey !== "your_private_key_here") {
   try {
     wallet = new ethers.Wallet(privateKey, provider);
-    console.log(
-      "[Blockchain] Wallet initialised with address:",
-      wallet.address,
-    );
-  } catch (error) {
-    console.warn(
-      "[Blockchain] Invalid private key, falling back to simulation mode:",
-      error,
-    );
+    console.log("[Blockchain] Wallet initialised:", wallet.address);
+  } catch {
+    console.warn("[Blockchain] Invalid private key, falling back to simulation mode");
+  }
+}
+
+if (wallet && contractAddress && contractAddress.startsWith("0x")) {
+  try {
+    registryContract = new ethers.Contract(contractAddress, REGISTRY_ABI, wallet);
+    console.log("[Blockchain] Connected to CertificateRegistry at:", contractAddress);
+  } catch {
+    console.warn("[Blockchain] Could not connect to contract, falling back to simulation");
   }
 } else {
-  console.log(
-    "[Blockchain] No private key provided, running in simulation mode (normal for development)",
-  );
+  console.log("[Blockchain] Running in simulation mode");
 }
 
 export class BlockchainService {
   private static instance: BlockchainService;
-
   private constructor() {}
 
   static getInstance(): BlockchainService {
@@ -72,210 +77,173 @@ export class BlockchainService {
     return BlockchainService.instance;
   }
 
-  initializeSampleRecords(): void {
-    const existingRecords = this.getBlockchainRecords();
-    let needsUpdate = false;
+  async writeCertificateHash(
+    certificateData: string,
+    holderIdentityHash?: string,
+    ipfsCid?: string
+  ): Promise<BlockchainRecord> {
+    const certHash = this.normalisedHash(certificateData);
 
-    const samples: Record<string, BlockchainRecord> = {
-      "0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890": {
-        transactionHash:
-          "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-        blockNumber: 1234567,
-        timestamp: new Date("2024-01-15").getTime(),
-        certificateHash:
-          "0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890",
-      },
-      "0x2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890ab": {
-        transactionHash:
-          "0xbcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab",
-        blockNumber: 1234890,
-        timestamp: new Date("2024-02-20").getTime(),
-        certificateHash:
-          "0x2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890ab",
-      },
-    };
-
-    for (const [hash, record] of Object.entries(samples)) {
-      if (!existingRecords[hash]) {
-        existingRecords[hash] = record;
-        needsUpdate = true;
-      }
-    }
-
-    if (needsUpdate) {
-      this.saveBlockchainRecords(existingRecords);
-      console.log(
-        `[Blockchain] Records updated: ${Object.keys(existingRecords).length} total`,
-      );
-    }
-  }
-
-  async writeCertificateHash(certificateData: string): Promise<BlockchainRecord> {
-    const normalizedInputHash = certificateData.match(/^(0x)?[a-f0-9]{64}$/i)
-      ? certificateData.startsWith("0x")
-        ? certificateData
-        : `0x${certificateData}`
-      : null;
-    const certificateHash =
-      normalizedInputHash || this.generateHash(certificateData);
-
-    if (wallet) {
+    if (registryContract && wallet) {
       try {
-        const result = await this.writeToBlockchain(certificateHash);
-        if (result.status === "failed") throw new Error(result.error);
-
-        const record: BlockchainRecord = {
-          transactionHash: result.txHash!,
-          blockNumber: result.blockNumber!,
-          timestamp: Date.now(),
-          certificateHash,
-        };
-
-        const existingRecords = this.getBlockchainRecords();
-        existingRecords[certificateHash] = record;
-        this.saveBlockchainRecords(existingRecords);
-        return record;
-      } catch (error: any) {
-        console.error("[Blockchain] Real blockchain write failed:", error.message);
-        console.log("[Blockchain] Falling back to simulation mode");
+        return await this.writeToContract(certHash, holderIdentityHash, ipfsCid);
+      } catch (err: any) {
+        console.error("[Blockchain] Real contract call failed:", err.message);
+        console.log("[Blockchain] Falling back to simulation");
       }
     }
 
-    // Simulation mode
-    const transactionHash = this.generateTransactionHash();
-    const record: BlockchainRecord = {
-      transactionHash,
-      blockNumber: Math.floor(Math.random() * 1000000) + 1000000,
-      timestamp: Date.now(),
-      certificateHash,
-    };
-
-    const existingRecords = this.getBlockchainRecords();
-    existingRecords[certificateHash] = record;
-    this.saveBlockchainRecords(existingRecords);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return record;
+    return this.simulate(certHash);
   }
 
-  async verifyCertificateHash(
-    certificateHash: string,
-  ): Promise<BlockchainRecord | null> {
-    const records = this.getBlockchainRecords();
-    const cachedRecord = records[certificateHash];
-    if (cachedRecord) return cachedRecord;
+  async verifyCertificateHash(certificateHash: string): Promise<BlockchainRecord | null> {
+    const cached = this.readCache()[certificateHash];
+    if (cached) return cached;
+
+    if (registryContract) {
+      try {
+        const result = await registryContract.verifyCertificate(certificateHash);
+        if (result.exists) {
+          const record: BlockchainRecord = {
+            transactionHash: "0x" + "0".repeat(64),
+            blockNumber: Number(result.issuedAt),
+            timestamp: Number(result.issuedAt) * 1000,
+            certificateHash,
+          };
+          this.writeCache({ ...this.readCache(), [certificateHash]: record });
+          return record;
+        }
+        return null;
+      } catch (err: any) {
+        console.error("[Blockchain] verifyCertificate error:", err.message);
+      }
+    }
+
     return await this.regenerateBlockchainRecord(certificateHash);
   }
 
-  async regenerateBlockchainRecord(
-    certificateHash: string,
-  ): Promise<BlockchainRecord | null> {
-    try {
-      const transactionHash = this.generateTransactionHash();
-      const record: BlockchainRecord = {
-        transactionHash,
-        blockNumber: Math.floor(Math.random() * 1000000) + 1000000,
-        timestamp: Date.now(),
-        certificateHash,
-      };
-      const records = this.getBlockchainRecords();
-      records[certificateHash] = record;
-      this.saveBlockchainRecords(records);
-      return record;
-    } catch (error: any) {
-      console.error(`[Blockchain] Error regenerating record:`, error.message);
-      return null;
+  initializeSampleRecords(): void {
+    const existing = this.readCache();
+    const samples: Record<string, BlockchainRecord> = {
+      "0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890": {
+        transactionHash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+        blockNumber: 1234567,
+        timestamp: new Date("2024-01-15").getTime(),
+        certificateHash: "0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890",
+      },
+      "0x2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890ab": {
+        transactionHash: "0xbcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab",
+        blockNumber: 1234890,
+        timestamp: new Date("2024-02-20").getTime(),
+        certificateHash: "0x2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890ab",
+      },
+    };
+    let updated = false;
+    for (const [hash, record] of Object.entries(samples)) {
+      if (!existing[hash]) { existing[hash] = record; updated = true; }
     }
+    if (updated) this.writeCache(existing);
   }
 
   async reconcileAllCertificates(): Promise<void> {
     try {
       const { database } = await import("./database");
-      const allCerts = await database.getAllCertificates();
-      const records = this.getBlockchainRecords();
-      for (const cert of allCerts) {
-        if (!records[cert.blockchainHash]) {
+      const certs = await database.getAllCertificates();
+      const cache = this.readCache();
+      for (const cert of certs) {
+        if (!cache[cert.blockchainHash]) {
           await this.regenerateBlockchainRecord(cert.blockchainHash);
         }
       }
-    } catch (error: any) {
-      console.error(`[Blockchain] Reconciliation error:`, error.message);
+    } catch (err: any) {
+      console.error("[Blockchain] Reconciliation error:", err.message);
     }
   }
 
-  private getBlockchainRecords(): Record<string, BlockchainRecord> {
-    try {
-      if (!fs.existsSync(BLOCKCHAIN_FILE)) return {};
-      const data = fs.readFileSync(BLOCKCHAIN_FILE, "utf8");
-      return JSON.parse(data);
-    } catch (error) {
-      return {};
-    }
+  async regenerateBlockchainRecord(certificateHash: string): Promise<BlockchainRecord> {
+    const record: BlockchainRecord = {
+      transactionHash: this.randomTxHash(),
+      blockNumber: Math.floor(Math.random() * 1_000_000) + 1_000_000,
+      timestamp: Date.now(),
+      certificateHash,
+    };
+    const cache = this.readCache();
+    cache[certificateHash] = record;
+    this.writeCache(cache);
+    return record;
   }
 
-  private saveBlockchainRecords(records: Record<string, BlockchainRecord>): void {
-    try {
-      fs.writeFileSync(BLOCKCHAIN_FILE, JSON.stringify(records, null, 2));
-    } catch (error) {
-      console.error("[Blockchain] Error saving records:", error);
+  private normalisedHash(data: string): string {
+    if (/^(0x)?[a-f0-9]{64}$/i.test(data)) {
+      return data.startsWith("0x") ? data : `0x${data}`;
     }
-  }
-
-  private generateHash(data: string): string {
     return "0x" + crypto.createHash("sha256").update(data).digest("hex");
   }
 
-  private generateTransactionHash(): string {
-    return (
-      "0x" +
-      Array.from({ length: 64 }, () =>
-        Math.floor(Math.random() * 16).toString(16),
-      ).join("")
-    );
+  private async writeToContract(
+    certHash: string,
+    holderIdentityHash?: string,
+    ipfsCid?: string
+  ): Promise<BlockchainRecord> {
+    if (!registryContract || !wallet) throw new Error("Contract not initialised");
+
+    const balance = await provider.getBalance(wallet.address);
+    if (balance === 0n) throw new Error("Insufficient Sepolia ETH");
+
+    const holderHash = holderIdentityHash
+      ? holderIdentityHash.startsWith("0x") ? holderIdentityHash : "0x" + holderIdentityHash
+      : ethers.ZeroHash;
+
+    const tx = await registryContract.issueCertificate(certHash, holderHash, ipfsCid || "");
+    console.log("[Blockchain] Submitted tx:", tx.hash);
+    const receipt = await tx.wait();
+    console.log("[Blockchain] Confirmed in block:", receipt.blockNumber);
+
+    const record: BlockchainRecord = {
+      transactionHash: tx.hash,
+      blockNumber: receipt.blockNumber,
+      timestamp: Date.now(),
+      certificateHash: certHash,
+    };
+    const cache = this.readCache();
+    cache[certHash] = record;
+    this.writeCache(cache);
+    return record;
   }
 
-  private async writeToBlockchain(certificateHash: string): Promise<{
-    status: string;
-    txHash?: string;
-    blockNumber?: number;
-    error?: string;
-  }> {
-    if (!wallet) throw new Error("Wallet not initialised");
+  private async simulate(certHash: string): Promise<BlockchainRecord> {
+    await new Promise((r) => setTimeout(r, 300));
+    const record: BlockchainRecord = {
+      transactionHash: this.randomTxHash(),
+      blockNumber: Math.floor(Math.random() * 1_000_000) + 1_000_000,
+      timestamp: Date.now(),
+      certificateHash: certHash,
+    };
+    const cache = this.readCache();
+    cache[certHash] = record;
+    this.writeCache(cache);
+    return record;
+  }
 
+  private readCache(): Record<string, BlockchainRecord> {
     try {
-      const balance = await provider.getBalance(wallet.address);
-      console.log(
-        `[Blockchain] Wallet balance: ${ethers.formatEther(balance)} ETH`,
-      );
+      if (!fs.existsSync(BLOCKCHAIN_FILE)) return {};
+      return JSON.parse(fs.readFileSync(BLOCKCHAIN_FILE, "utf8"));
+    } catch { return {}; }
+  }
 
-      if (balance === BigInt(0)) {
-        throw new Error(
-          "Insufficient ETH balance. Please get Sepolia test ETH from the faucet.",
-        );
-      }
-
-      const tx = await wallet.sendTransaction({
-        to: wallet.address,
-        value: 0,
-        gasLimit: 21000,
-      });
-
-      const receipt = await tx.wait();
-      return {
-        status: "success",
-        txHash: tx.hash,
-        blockNumber: receipt!.blockNumber,
-      };
-    } catch (error: any) {
-      let errorMessage = error.message;
-      if (
-        error.code === "INSUFFICIENT_FUNDS" ||
-        error.message.includes("insufficient funds")
-      ) {
-        errorMessage =
-          "Insufficient ETH balance. Please get Sepolia test ETH from a faucet.";
-      }
-      return { status: "failed", error: errorMessage };
+  private writeCache(records: Record<string, BlockchainRecord>): void {
+    try {
+      fs.writeFileSync(BLOCKCHAIN_FILE, JSON.stringify(records, null, 2));
+    } catch (err: any) {
+      console.error("[Blockchain] Cache write error:", err.message);
     }
+  }
+
+  private randomTxHash(): string {
+    return "0x" + Array.from({ length: 64 }, () =>
+      Math.floor(Math.random() * 16).toString(16)
+    ).join("");
   }
 }
 
