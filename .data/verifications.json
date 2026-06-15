@@ -1,0 +1,314 @@
+[
+  {
+    "id": "VER-1760049427388",
+    "certificateId": "NAUB-2025-325876508",
+    "timestamp": 1760049427388,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1760086752333",
+    "certificateId": "NAUB-2025-325876508",
+    "timestamp": 1760086752333,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1760089418069",
+    "certificateId": "NAUB-2025-325876508",
+    "timestamp": 1760089418069,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1760089699091",
+    "certificateId": "NAUB-2025-196968845",
+    "timestamp": 1760089699091,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1760089824644",
+    "certificateId": "NAUB-2025-196968845",
+    "timestamp": 1760089824644,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1760090034150",
+    "certificateId": "NAUB-2025-196968845",
+    "timestamp": 1760090034150,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1760090344263",
+    "certificateId": "NAUB-2025-196968845",
+    "timestamp": 1760090344263,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1760090834513",
+    "certificateId": "NAUB-2025-196968845",
+    "timestamp": 1760090834513,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1760091073320",
+    "certificateId": "NAUB-2025-196968845",
+    "timestamp": 1760091073320,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1760092887799",
+    "certificateId": "NAUB-2025-851995317",
+    "timestamp": 1760092887799,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1776763689810",
+    "certificateId": "NAUB-2025-851995317",
+    "timestamp": 1776763689810,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1776763731866",
+    "certificateId": "NAUB-2025-325876508",
+    "timestamp": 1776763731866,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1776779538167",
+    "certificateId": "NAUB-2025-851995317",
+    "timestamp": 1776779538167,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A001",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776762000000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A002",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776762600000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A003",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776763200000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A004",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776763800000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A005",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776764400000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A006",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776765000000,
+    "ipAddress": "41.58.103.22"
+  },
+  {
+    "id": "VER-CRIT01-A007",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776765600000,
+    "ipAddress": "41.58.103.22"
+  },
+  {
+    "id": "VER-CRIT01-A008",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776766200000,
+    "ipAddress": "41.58.103.22"
+  },
+  {
+    "id": "VER-CRIT01-A009",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776766800000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A010",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776767400000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A011",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776768000000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A012",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776768600000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A013",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776769200000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A014",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776769800000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A015",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776770400000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A016",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776771000000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A017",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776771600000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-CRIT01-A018",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776772200000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-BULK-S001",
+    "certificateId": "NAUB-2025-CRIT01",
+    "timestamp": 1776765700000,
+    "ipAddress": "203.0.113.45"
+  },
+  {
+    "id": "VER-BULK-S002",
+    "certificateId": "NAUB-2025-CRIT02",
+    "timestamp": 1776766100000,
+    "ipAddress": "203.0.113.45"
+  },
+  {
+    "id": "VER-BULK-S003",
+    "certificateId": "NAUB-2025-WARN01",
+    "timestamp": 1776766500000,
+    "ipAddress": "203.0.113.45"
+  },
+  {
+    "id": "VER-BULK-S004",
+    "certificateId": "NAUB-2025-WARN02",
+    "timestamp": 1776766900000,
+    "ipAddress": "203.0.113.45"
+  },
+  {
+    "id": "VER-BULK-S005",
+    "certificateId": "NAUB-2025-WARN03",
+    "timestamp": 1776767300000,
+    "ipAddress": "203.0.113.45"
+  },
+  {
+    "id": "VER-BULK-S006",
+    "certificateId": "NAUB-2025-VAL01",
+    "timestamp": 1776767700000,
+    "ipAddress": "203.0.113.45"
+  },
+  {
+    "id": "VER-BULK-S007",
+    "certificateId": "NAUB-2025-VAL02",
+    "timestamp": 1776768100000,
+    "ipAddress": "203.0.113.45"
+  },
+  {
+    "id": "VER-BULK-S008",
+    "certificateId": "NAUB-2025-EXP01",
+    "timestamp": 1776768500000,
+    "ipAddress": "203.0.113.45"
+  },
+  {
+    "id": "VER-BULK-S009",
+    "certificateId": "NAUB-2024-001",
+    "timestamp": 1776768900000,
+    "ipAddress": "203.0.113.45"
+  },
+  {
+    "id": "VER-BULK-S010",
+    "certificateId": "NAUB-2024-EXP01",
+    "timestamp": 1776769300000,
+    "ipAddress": "203.0.113.45"
+  },
+  {
+    "id": "VER-NORMAL-001",
+    "certificateId": "NAUB-2024-002",
+    "timestamp": 1776758400000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-NORMAL-002",
+    "certificateId": "NAUB-2025-VAL01",
+    "timestamp": 1776759000000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-NORMAL-003",
+    "certificateId": "NAUB-2025-VAL03",
+    "timestamp": 1776759600000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-NORMAL-004",
+    "certificateId": "NAUB-2026-VAL01",
+    "timestamp": 1776760200000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-NORMAL-005",
+    "certificateId": "NAUB-2025-EXP02",
+    "timestamp": 1776760800000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-NORMAL-006",
+    "certificateId": "NAUB-2024-REV01",
+    "timestamp": 1776761400000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-NORMAL-007",
+    "certificateId": "NAUB-2024-REV02",
+    "timestamp": 1776762000000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-NORMAL-008",
+    "certificateId": "NAUB-2025-VAL04",
+    "timestamp": 1776762600000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-NORMAL-009",
+    "certificateId": "NAUB-2026-VAL02",
+    "timestamp": 1776763200000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-NORMAL-010",
+    "certificateId": "NAUB-2024-EXP02",
+    "timestamp": 1776763800000,
+    "ipAddress": "::1"
+  },
+  {
+    "id": "VER-1776780376211",
+    "certificateId": "NAUB-2026-VAL01",
+    "timestamp": 1776780376211,
+    "ipAddress": "::1"
+  }
+]
