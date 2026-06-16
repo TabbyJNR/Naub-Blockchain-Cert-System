@@ -1,5 +1,4 @@
-// Database service that uses file storage for persistence
-// In production, this would use MongoDB
+// Database service — persists to MongoDB Atlas via lib/storage.ts
 
 export interface Certificate {
   id: string;
@@ -118,11 +117,21 @@ class DatabaseService {
   async getAnalytics() {
     const certs = await this.getAllCertificates();
     const verifications = await this.getVerifications();
+
+    const validCerts = certs.filter((c) => c.status === "valid");
+    const revokedCerts = certs.filter((c) => c.status === "revoked");
+
+    // Active certificate holders = distinct individuals who hold at least
+    // one currently-valid certificate (identified by the NDPR-safe
+    // holderIdentityHash, never by name).
+    const distinctActiveHolders = new Set(validCerts.map((c) => c.holderIdentityHash));
+
     return {
       totalCertificates: certs.length,
-      validCertificates: certs.filter((c) => c.status === "valid").length,
-      revokedCertificates: certs.filter((c) => c.status === "revoked").length,
+      validCertificates: validCerts.length,
+      revokedCertificates: revokedCerts.length,
       totalVerifications: verifications.length,
+      activeCertificateHolders: distinctActiveHolders.size,
       recentVerifications: verifications.slice(-10).reverse(),
     };
   }

@@ -29,6 +29,7 @@ import {
   certificateCategories,
   degreeClasses,
 } from "@/lib/certificate-utils";
+import { getRegistryContractAddress, issueCertificateOnChain } from "@/lib/contract-client";
 import { NaubBrand } from "@/components/naub-brand";
 import {
   ArrowLeft,
@@ -51,6 +52,7 @@ export default function IssueCertificatePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hashPreview, setHashPreview] = useState<{ certificateHash: string; holderIdentityHash: string } | null>(null);
   const [formData, setFormData] = useState({
     studentName: "",
@@ -98,12 +100,44 @@ export default function IssueCertificatePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setStatusMessage(null);
 
     try {
       const hashes = await computeHashes();
       if (!hashes) {
         setIsLoading(false);
         return;
+      }
+
+      const contractAddress = await getRegistryContractAddress();
+      let onChainTransactionHash: string | undefined;
+      let onChainBlockNumber: number | undefined;
+
+      if (contractAddress) {
+        try {
+          setStatusMessage("Waiting for you to confirm the transaction in MetaMask...");
+          const result = await issueCertificateOnChain(
+            contractAddress,
+            hashes.certificateHash,
+            hashes.holderIdentityHash,
+            formData.ipfsCid,
+          );
+          onChainTransactionHash = result.transactionHash;
+          onChainBlockNumber = result.blockNumber;
+          setStatusMessage("Transaction confirmed on Sepolia. Saving certificate record...");
+        } catch (chainError: any) {
+          setIsLoading(false);
+          setStatusMessage(null);
+          toast({
+            title: "Transaction not completed",
+            description:
+              chainError?.message?.includes("rejected") || chainError?.code === 4001
+                ? "You rejected the transaction in MetaMask. The certificate was not issued."
+                : chainError?.message || "The blockchain transaction failed.",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       const response = await fetch("/api/certificates/issue", {
@@ -114,6 +148,8 @@ export default function IssueCertificatePage() {
           ...hashes,
           certificateType: "DEGREE",
           institutionName: "Nigerian Army University Biu",
+          onChainTransactionHash,
+          onChainBlockNumber,
         }),
       });
 
@@ -142,6 +178,7 @@ export default function IssueCertificatePage() {
       });
     } finally {
       setIsLoading(false);
+      setStatusMessage(null);
     }
   };
 
@@ -233,6 +270,13 @@ export default function IssueCertificatePage() {
                   <Badge className="bg-primary text-primary-foreground">SHA-256 Preview</Badge>
                   <p className="break-all font-mono text-xs">Certificate: {hashPreview.certificateHash}</p>
                   <p className="break-all font-mono text-xs">Holder: {hashPreview.holderIdentityHash}</p>
+                </div>
+              )}
+
+              {statusMessage && (
+                <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-primary">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {statusMessage}
                 </div>
               )}
 

@@ -23,6 +23,7 @@ import {
   QrCode,
 } from "lucide-react";
 import { formatDate, getCertificateStatusColor } from "@/lib/certificate-utils";
+import { getRegistryContractAddress, revokeCertificateOnChain } from "@/lib/contract-client";
 import type { Certificate } from "@/lib/database";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeGenerator } from "@/components/qr-code-generator";
@@ -34,6 +35,7 @@ export default function CertificateDetailPage() {
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRevoking, setIsRevoking] = useState(false);
+  const [revokeStatusMessage, setRevokeStatusMessage] = useState<string | null>(null);
   const [showRevokeForm, setShowRevokeForm] = useState(false);
   const [revocationReason, setRevocationReason] = useState("");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
@@ -88,11 +90,46 @@ export default function CertificateDetailPage() {
     }
 
     setIsRevoking(true);
+    setRevokeStatusMessage(null);
     try {
+      const contractAddress = await getRegistryContractAddress();
+      let onChainTransactionHash: string | undefined;
+      let onChainBlockNumber: number | undefined;
+
+      if (contractAddress && certificate?.blockchainHash) {
+        try {
+          setRevokeStatusMessage("Waiting for you to confirm the revocation in MetaMask...");
+          const result = await revokeCertificateOnChain(
+            contractAddress,
+            certificate.blockchainHash,
+            revocationReason.trim(),
+          );
+          onChainTransactionHash = result.transactionHash;
+          onChainBlockNumber = result.blockNumber;
+          setRevokeStatusMessage("Transaction confirmed on Sepolia. Updating record...");
+        } catch (chainError: any) {
+          setIsRevoking(false);
+          setRevokeStatusMessage(null);
+          toast({
+            title: "Transaction not completed",
+            description:
+              chainError?.message?.includes("rejected") || chainError?.code === 4001
+                ? "You rejected the transaction in MetaMask. The certificate was not revoked."
+                : chainError?.message || "The blockchain transaction failed.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       const response = await fetch(`/api/certificates/${params.id}/revoke`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: revocationReason.trim() }),
+        body: JSON.stringify({
+          reason: revocationReason.trim(),
+          onChainTransactionHash,
+          onChainBlockNumber,
+        }),
       });
 
       if (response.ok) {
@@ -119,6 +156,7 @@ export default function CertificateDetailPage() {
       });
     } finally {
       setIsRevoking(false);
+      setRevokeStatusMessage(null);
     }
   };
 
@@ -444,6 +482,12 @@ export default function CertificateDetailPage() {
                   onChange={(e) => setRevocationReason(e.target.value)}
                   rows={3}
                 />
+                {revokeStatusMessage && (
+                  <div className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-700 border-t-transparent" />
+                    {revokeStatusMessage}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Button
                     variant="destructive"

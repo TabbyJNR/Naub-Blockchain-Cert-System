@@ -32,6 +32,7 @@ interface Analytics {
   validCertificates: number;
   revokedCertificates: number;
   totalVerifications: number;
+  activeCertificateHolders: number;
   recentVerifications: Array<{
     id: string;
     certificateId: string;
@@ -43,6 +44,7 @@ export default function AdminDashboard() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [systemStatus, setSystemStatus] = useState<"Operational" | "Degraded">("Operational");
   const router = useRouter();
 
   useEffect(() => {
@@ -65,8 +67,14 @@ export default function AdminDashboard() {
         const analyticsData = await analyticsResponse.json();
         setAnalytics(analyticsData);
       }
+
+      // System is "Operational" only if both the certificate store and the
+      // analytics endpoint actually responded successfully — this reflects
+      // real backend/database health rather than a hardcoded label.
+      setSystemStatus(certsResponse.ok && analyticsResponse.ok ? "Operational" : "Degraded");
     } catch (error) {
       console.error("[Dashboard] Error loading data:", error);
+      setSystemStatus("Degraded");
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +192,7 @@ export default function AdminDashboard() {
                 Active Certificate Holders
               </CardTitle>
               <div className="text-2xl font-bold">
-                {analytics?.validCertificates || 0}
+                {analytics?.activeCertificateHolders ?? 0}
               </div>
             </CardHeader>
           </Card>
@@ -195,8 +203,8 @@ export default function AdminDashboard() {
                 <BarChart3 className="h-5 w-5 text-primary" />
                 System Status
               </CardTitle>
-              <div className="text-2xl font-bold text-green-600">
-                Operational
+              <div className={`text-2xl font-bold ${systemStatus === "Operational" ? "text-green-600" : "text-red-600"}`}>
+                {systemStatus}
               </div>
             </CardHeader>
           </Card>

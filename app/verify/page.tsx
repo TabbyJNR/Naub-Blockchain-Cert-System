@@ -155,7 +155,7 @@ export default function VerifyPage() {
             <form onSubmit={handleVerify} className="space-y-4">
               <div className="flex gap-2">
                 <Input
-                  placeholder="Paste certificate hash, certificate number, or demo ID (e.g., NAUB-2024-001)"
+                  placeholder="Paste certificate hash, certificate number, or ID (e.g., NAUB-2026-000123)"
                   value={certificateId}
                   onChange={(e) => setCertificateId(e.target.value)}
                   className="flex-1"

@@ -122,27 +122,13 @@ export class BlockchainService {
     return await this.regenerateBlockchainRecord(certificateHash);
   }
 
+  /**
+   * Intentionally a no-op. The blockchain cache starts empty — every
+   * record must come from a real on-chain transaction (or a real
+   * simulated one in development), never a hardcoded sample.
+   */
   initializeSampleRecords(): void {
-    const existing = this.readCache();
-    const samples: Record<string, BlockchainRecord> = {
-      "0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890": {
-        transactionHash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-        blockNumber: 1234567,
-        timestamp: new Date("2024-01-15").getTime(),
-        certificateHash: "0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890",
-      },
-      "0x2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890ab": {
-        transactionHash: "0xbcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab",
-        blockNumber: 1234890,
-        timestamp: new Date("2024-02-20").getTime(),
-        certificateHash: "0x2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890ab",
-      },
-    };
-    let updated = false;
-    for (const [hash, record] of Object.entries(samples)) {
-      if (!existing[hash]) { existing[hash] = record; updated = true; }
-    }
-    if (updated) this.writeCache(existing);
+    return;
   }
 
   async reconcileAllCertificates(): Promise<void> {
@@ -158,6 +144,29 @@ export class BlockchainService {
     } catch (err: any) {
       console.error("[Blockchain] Reconciliation error:", err.message);
     }
+  }
+
+  /**
+   * Cache a transaction result that was already submitted and confirmed
+   * directly by the browser (via the Registry Admin's own MetaMask wallet),
+   * so subsequent verifyCertificateHash() lookups are fast without needing
+   * to re-query the chain.
+   */
+  async recordConfirmedTransaction(
+    certificateHash: string,
+    transactionHash: string,
+    blockNumber: number
+  ): Promise<BlockchainRecord> {
+    const record: BlockchainRecord = {
+      transactionHash,
+      blockNumber,
+      timestamp: Date.now(),
+      certificateHash,
+    };
+    const cache = this.readCache();
+    cache[certificateHash] = record;
+    this.writeCache(cache);
+    return record;
   }
 
   async regenerateBlockchainRecord(certificateHash: string): Promise<BlockchainRecord> {

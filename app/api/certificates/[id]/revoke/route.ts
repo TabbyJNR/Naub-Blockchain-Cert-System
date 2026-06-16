@@ -10,6 +10,7 @@ export async function POST(
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
     const reason: string = body.reason || "Certificate revoked by NAUB Registry";
+    const { onChainTransactionHash, onChainBlockNumber } = body;
 
     const certificate = await database.getCertificate(id);
     if (!certificate) {
@@ -20,21 +21,32 @@ export async function POST(
       return NextResponse.json({ error: "Certificate is already revoked" }, { status: 400 });
     }
 
-    // Record revocation on blockchain
-    const revocationData = JSON.stringify({
-      action: "REVOKE",
-      certificateId: id,
-      originalHash: certificate.blockchainHash,
-      revokedAt: new Date().toISOString(),
-      reason,
-    });
+    let revocationTxHash: string;
+    let revocationBlockNumber: number;
 
-    const blockchainRecord = await blockchain.writeCertificateHash(revocationData);
+    if (onChainTransactionHash && typeof onChainBlockNumber === "number") {
+      // The browser already submitted and confirmed revokeCertificate()
+      // directly via the Registry Admin's own MetaMask wallet.
+      revocationTxHash = onChainTransactionHash;
+      revocationBlockNumber = onChainBlockNumber;
+    } else {
+      // Fallback path: server signs and submits, or simulates.
+      const revocationData = JSON.stringify({
+        action: "REVOKE",
+        certificateId: id,
+        originalHash: certificate.blockchainHash,
+        revokedAt: new Date().toISOString(),
+        reason,
+      });
+      const blockchainRecord = await blockchain.writeCertificateHash(revocationData);
+      revocationTxHash = blockchainRecord.transactionHash;
+      revocationBlockNumber = blockchainRecord.blockNumber;
+    }
 
     const updated = await database.updateCertificate(id, {
       status: "revoked",
-      revocationTxHash: blockchainRecord.transactionHash,
-      revocationBlockNumber: blockchainRecord.blockNumber,
+      revocationTxHash,
+      revocationBlockNumber,
       revokedAt: new Date().toISOString(),
       revocationReason: reason,
     });
@@ -43,8 +55,8 @@ export async function POST(
       success: true,
       certificate: updated,
       blockchain: {
-        revocationTxHash: blockchainRecord.transactionHash,
-        revocationBlockNumber: blockchainRecord.blockNumber,
+        revocationTxHash,
+        revocationBlockNumber,
       },
     });
   } catch (error) {
