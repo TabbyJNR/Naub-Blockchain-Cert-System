@@ -75,10 +75,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid or expired nonce" }, { status: 401 });
     }
 
-    // Verify EIP-191 signature
+    // Verify EIP-191 signature.
+    // Must reconstruct the exact same message string the frontend signed
+    // (ethers.verifyMessage handles the "\x19Ethereum Signed Message:\n"
+    // prefix and UTF-8 encoding internally — we just need the original
+    // plain-text message here, not the hex-encoded bytes sent to MetaMask).
+    const signMessage = `NAUB Registry sign-in\nNonce: ${nonce}`;
     let recoveredAddress: string;
     try {
-      recoveredAddress = ethers.verifyMessage(nonce, signature).toLowerCase();
+      recoveredAddress = ethers.verifyMessage(signMessage, signature).toLowerCase();
     } catch {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }

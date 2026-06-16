@@ -59,9 +59,19 @@ export default function AdminLoginPage() {
       if (!nonceRes.ok) throw new Error(nonceData.error || "Failed to obtain nonce");
 
       // Step 3: sign the nonce with EIP-191 personal_sign
+      // The message must be explicitly UTF-8-hex-encoded (0x-prefixed) so
+      // MetaMask treats it as raw bytes-of-text rather than ambiguous hex,
+      // which otherwise produces garbled / mismatched signatures.
+      const signMessage = `NAUB Registry sign-in\nNonce: ${nonceData.nonce}`;
+      const hexEncodedMessage =
+        "0x" +
+        Array.from(new TextEncoder().encode(signMessage))
+          .map((byte) => byte.toString(16).padStart(2, "0"))
+          .join("");
+
       const signature: string = await window.ethereum.request({
         method: "personal_sign",
-        params: [nonceData.nonce, address],
+        params: [hexEncodedMessage, address],
       });
 
       // Step 4: submit signature to verify and receive a JWT
