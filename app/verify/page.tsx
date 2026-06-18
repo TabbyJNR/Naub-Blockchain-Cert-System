@@ -28,6 +28,7 @@ import {
 import { formatDate, getCertificateStatusColor } from "@/lib/certificate-utils";
 import { QRScanner } from "@/components/qr-scanner";
 import { NaubBrand } from "@/components/naub-brand";
+import { CertificateDisplayFormal } from "@/components/certificate-display-formal";
 
 interface PublicCertificate {
   id: string;
@@ -198,119 +199,86 @@ export default function VerifyPage() {
           <>
             {certificate ? (
               <div className="space-y-6">
-                {/* 1. Certificate Details */}
-                <div className="grid md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Certificate Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Programme of Study</p>
-                        <p className="font-semibold text-lg">{certificate.programmeOfStudy}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Class of Degree</p>
-                        <p className="font-semibold">{certificate.classOfDegree}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Institution</p>
-                        <p className="font-semibold">{certificate.institutionName}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Certificate Type</p>
-                        <p className="font-semibold">{certificate.certificateType}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Status</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Certificate ID</p>
-                        <p className="font-mono font-semibold">{certificate.id}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Status</p>
-                        <Badge className={getCertificateStatusColor(certificate.status)}>
-                          {certificate.status}
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Date of Award</p>
-                        <p className="font-semibold">{formatDate(certificate.dateOfAward)}</p>
-                      </div>
-                      {certificate.status === "revoked" && certificate.revocationReason && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">Revocation Reason</p>
-                          <p className="font-semibold text-red-600">{certificate.revocationReason}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                {/* Status banner */}
+                <div className={`rounded-lg border p-4 flex items-center gap-3 ${
+                  certificate.status === "revoked"
+                    ? "bg-red-50 border-red-200"
+                    : "bg-green-50 border-green-200"
+                }`}>
+                  {certificate.status === "revoked"
+                    ? <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                    : <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                  }
+                  <div>
+                    <p className={`font-semibold ${certificate.status === "revoked" ? "text-red-900" : "text-green-900"}`}>
+                      {certificate.status === "revoked" ? "Certificate Revoked" : "Certificate is Valid"}
+                    </p>
+                    <p className={`text-sm ${certificate.status === "revoked" ? "text-red-700" : "text-green-700"}`}>
+                      {certificate.status === "revoked"
+                        ? `This certificate has been revoked${certificate.revocationReason ? `: ${certificate.revocationReason}` : ""}`
+                        : "This certificate is authentic and verified on the Ethereum Sepolia blockchain"
+                      }
+                    </p>
+                  </div>
                 </div>
 
-                {/* 2. Blockchain Verification */}
+                {/* Formal certificate output */}
+                <CertificateDisplayFormal certificate={certificate as any} />
+
+                {/* Blockchain verification */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Shield className="h-5 w-5 text-primary" />
                       Blockchain Verification
                     </CardTitle>
-                    <CardDescription>Cryptographic proof of authenticity</CardDescription>
+                    <CardDescription>Cryptographic proof of authenticity on Ethereum Sepolia</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">Certificate Hash</p>
-                      <div className="bg-muted p-3 rounded font-mono text-sm break-all">
+                      <p className="text-sm text-muted-foreground mb-1">Certificate Hash</p>
+                      <div className="bg-muted p-3 rounded font-mono text-xs break-all">
                         {blockchainInfo?.certificateHash}
                       </div>
                     </div>
-
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">Issuance Transaction</p>
+                      <p className="text-sm text-muted-foreground mb-1">Issuance Transaction</p>
                       <div className="flex items-center gap-2">
-                        <div className="bg-muted p-3 rounded font-mono text-sm break-all flex-1">
+                        <div className="bg-muted p-3 rounded font-mono text-xs break-all flex-1">
                           {blockchainInfo?.txHash}
                         </div>
-                        <Button variant="outline" size="icon" title="View on blockchain explorer">
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
+                        <a
+                          href={`https://sepolia.etherscan.io/tx/${blockchainInfo?.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button variant="outline" size="icon" title="View on Etherscan">
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </a>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">Block: {blockchainInfo?.blockNumber}</p>
                     </div>
-
                     {certificate.status === "revoked" && blockchainInfo?.revocationTxHash && (
                       <div className="border-t pt-4">
-                        <p className="text-sm text-muted-foreground mb-2">Revocation Transaction</p>
+                        <p className="text-sm text-muted-foreground mb-1">Revocation Transaction</p>
                         <div className="flex items-center gap-2">
-                          <div className="bg-red-50 p-3 rounded font-mono text-sm break-all flex-1 border border-red-200">
+                          <div className="bg-red-50 p-3 rounded font-mono text-xs break-all flex-1 border border-red-200">
                             {blockchainInfo.revocationTxHash}
                           </div>
-                          <Button variant="outline" size="icon" title="View revocation on blockchain explorer">
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
+                          <a
+                            href={`https://sepolia.etherscan.io/tx/${blockchainInfo.revocationTxHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Button variant="outline" size="icon" title="View revocation on Etherscan">
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          </a>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">Block: {blockchainInfo.revocationBlockNumber}</p>
-                        <p className="text-xs text-red-600 mt-1">
-                          Revoked: {blockchainInfo.revokedAt ? new Date(blockchainInfo.revokedAt).toLocaleString() : "Unknown"}
-                        </p>
                       </div>
                     )}
-
-                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mt-4">
-                      <p className="text-sm text-primary">
-                        <strong>Verified:</strong> This certificate's hash has been verified on the blockchain and matches the official NAUB records.
-                        {certificate.status === "revoked" && (
-                          <span className="block mt-2 text-red-600">
-                            <strong>Revoked:</strong> This certificate has been permanently revoked and recorded on the blockchain.
-                          </span>
-                        )}
-                      </p>
-                    </div>
                   </CardContent>
                 </Card>
               </div>

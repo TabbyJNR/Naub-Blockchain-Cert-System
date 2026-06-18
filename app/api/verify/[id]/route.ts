@@ -9,12 +9,13 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Find certificate by hash or certificate number
+    // Find certificate by direct ID, blockchain hash, or certificate number
     const normalizedHash = id.startsWith("0x") ? id : `0x${id}`;
     const all = await database.getAllCertificates();
     const certificate =
       all.find(
         (cert) =>
+          cert.id === id ||
           cert.blockchainHash === id ||
           cert.blockchainHash === normalizedHash ||
           cert.certificateNumber === id,
@@ -51,18 +52,26 @@ export async function GET(
       blockchainResponse.revocationReason = certificate.revocationReason;
     }
 
-    // Return only public-safe fields (no personal data)
+    // Return public fields needed to render the formal NAUB certificate.
+    // Note on NDPR: studentName and certificateNumber are printed on the
+    // physical certificate itself — they are not additional disclosures.
+    // Date of birth and matriculation number are intentionally excluded.
     const publicCertificate = {
       id: certificate.id,
+      studentName: certificate.studentName,
       programmeOfStudy: certificate.programmeOfStudy,
       classOfDegree: certificate.classOfDegree,
       dateOfAward: certificate.dateOfAward,
+      certificateNumber: certificate.certificateNumber,
       institutionName: certificate.institutionName,
       certificateType: certificate.certificateType,
       status: certificate.status,
       ipfsCid: certificate.ipfsCid,
       revocationReason: certificate.revocationReason,
       revokedAt: certificate.revokedAt,
+      // viceChancellor field is kept for display compatibility but the
+      // formal certificate component uses the fixed letterhead constant
+      viceChancellor: certificate.viceChancellor,
     };
 
     return NextResponse.json({

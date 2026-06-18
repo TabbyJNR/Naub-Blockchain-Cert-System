@@ -91,9 +91,13 @@ export function CertificateDisplayFormal({ certificate }: CertificateDisplayProp
 
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 10;
+      const usableWidth = pageWidth - margin * 2;
+      const imgHeightMm = (canvas.height / canvas.width) * usableWidth;
+      const yOffset = Math.max(margin, (pageHeight - imgHeightMm) / 2);
+      pdf.addImage(imgData, "PNG", margin, yOffset, usableWidth, imgHeightMm);
       pdf.save(`${certificate.certificateNumber.replace(/\//g, "-")}.pdf`);
     } catch (error) {
       console.error("[Certificate] PDF export failed:", error);
@@ -217,8 +221,8 @@ export function CertificateDisplayFormal({ certificate }: CertificateDisplayProp
 const CERTIFICATE_DISPLAY_STYLES = `
 .naub-certificate {
   position: relative;
-  width: 760px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 760px;
   margin: 0 auto;
   padding: 48px 56px 40px;
   background: #fffdfa;
@@ -226,6 +230,7 @@ const CERTIFICATE_DISPLAY_STYLES = `
   font-family: Georgia, 'Times New Roman', serif;
   color: #1a1a1a;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .naub-watermark {
@@ -345,7 +350,18 @@ const CERTIFICATE_DISPLAY_STYLES = `
 `;
 
 const CERTIFICATE_PRINT_STYLES = `
-  * { box-sizing: border-box; }
-  body { margin: 0; padding: 24px; background: #ffffff; display: flex; justify-content: center; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 210mm; height: 297mm; }
+  body { padding: 10mm; background: #ffffff; display: flex; justify-content: center; align-items: flex-start; }
+  .naub-certificate {
+    width: 190mm !important;
+    max-width: 190mm !important;
+    border: 3px double #7a1f1f;
+    padding: 12mm 14mm 10mm;
+    background: #fffdfa;
+    font-family: Georgia, 'Times New Roman', serif;
+    position: relative;
+    overflow: hidden;
+  }
   ${CERTIFICATE_DISPLAY_STYLES}
 `;

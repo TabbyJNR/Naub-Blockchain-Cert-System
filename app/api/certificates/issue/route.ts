@@ -16,18 +16,18 @@ export async function POST(request: Request) {
       classOfDegree,
       dateOfAward,
       certificateNumber,
-      viceChancellor,
       ipfsCid,
       institutionName = "Nigerian Army University Biu",
       certificateType = "DEGREE",
-      certificateHash,    // SHA-256 hash computed in browser via Web Crypto API
-      holderIdentityHash, // SHA-256 hash of studentName + dateOfBirth (NDPR-safe)
-      // If the browser already submitted the transaction directly to the
-      // CertificateRegistry contract via MetaMask, these are supplied so
-      // the backend records the real result instead of writing its own.
+      certificateHash,
+      holderIdentityHash,
       onChainTransactionHash,
       onChainBlockNumber,
     } = body;
+
+    // Vice Chancellor is a fixed institutional constant — not submitted
+    // from the form, so it is always consistent across all certificates.
+    const viceChancellor = "Professor Lawan Bala Buratai";
 
     // Validate all eight required certificate fields
     if (
@@ -37,11 +37,10 @@ export async function POST(request: Request) {
       !programmeOfStudy ||
       !classOfDegree ||
       !dateOfAward ||
-      !certificateNumber ||
-      !viceChancellor
+      !certificateNumber
     ) {
       return NextResponse.json(
-        { error: "Missing required fields: studentName, matriculationNumber, dateOfBirth, programmeOfStudy, classOfDegree, dateOfAward, certificateNumber, viceChancellor" },
+        { error: "Missing required fields: studentName, matriculationNumber, dateOfBirth, programmeOfStudy, classOfDegree, dateOfAward, certificateNumber" },
         { status: 400 }
       );
     }

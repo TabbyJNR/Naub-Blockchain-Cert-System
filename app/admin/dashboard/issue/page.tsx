@@ -62,7 +62,6 @@ export default function IssueCertificatePage() {
     classOfDegree: "",
     dateOfAward: "",
     certificateNumber: "",
-    viceChancellor: "",
     ipfsCid: "",
   });
 
@@ -74,7 +73,6 @@ export default function IssueCertificatePage() {
     formData.classOfDegree,
     formData.dateOfAward,
     formData.certificateNumber,
-    formData.viceChancellor,
   ];
 
   const computeHashes = async () => {
@@ -244,10 +242,6 @@ export default function IssueCertificatePage() {
                 <div className="space-y-2">
                   <Label htmlFor="certificateNumber">Certificate Number *</Label>
                   <Input id="certificateNumber" placeholder="NAUB/CERT/2026/0001" value={formData.certificateNumber} onChange={(e) => handleChange("certificateNumber", e.target.value)} required />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="viceChancellor">Vice Chancellor&apos;s Name *</Label>
-                  <Input id="viceChancellor" placeholder="Name of Vice Chancellor" value={formData.viceChancellor} onChange={(e) => handleChange("viceChancellor", e.target.value)} required />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="ipfsCid">IPFS CID / Pinata Reference</Label>
