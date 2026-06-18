@@ -13,6 +13,28 @@ export function formatDate(date: string): string {
   });
 }
 
+/**
+ * Formats a date the way it appears on the official NAUB certificate:
+ * an ordinal day, full month name, full year — e.g. "15th December, 2025".
+ */
+export function formatOrdinalDate(date: string): string {
+  const d = new Date(date);
+  const day = d.getDate();
+  const month = d.toLocaleDateString("en-NG", { month: "long" });
+  const year = d.getFullYear();
+
+  const suffix =
+    day % 10 === 1 && day !== 11
+      ? "st"
+      : day % 10 === 2 && day !== 12
+        ? "nd"
+        : day % 10 === 3 && day !== 13
+          ? "rd"
+          : "th";
+
+  return `${day}${suffix} ${month}, ${year}`;
+}
+
 export function getCertificateStatusColor(status: string): string {
   switch (status) {
     case "valid":
@@ -39,10 +61,10 @@ export const certificateCategories = [
 ];
 
 export const degreeClasses = [
-  "First Class Honours",
-  "Second Class Honours (Upper Division)",
-  "Second Class Honours (Lower Division)",
-  "Third Class Honours",
+  "First Class",
+  "Second Class Upper Division",
+  "Second Class Lower Division",
+  "Third Class",
   "Pass",
 ];
 

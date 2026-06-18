@@ -27,7 +27,7 @@ import { getRegistryContractAddress, revokeCertificateOnChain } from "@/lib/cont
 import type { Certificate } from "@/lib/database";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeGenerator } from "@/components/qr-code-generator";
-import { CertificateDownload } from "@/components/certificate-download";
+import { CertificateDisplayFormal } from "@/components/certificate-display-formal";
 
 export default function CertificateDetailPage() {
   const params = useParams();
@@ -450,13 +450,14 @@ export default function CertificateDetailPage() {
           </Card>
         </div>
 
+        {/* Certificate Output */}
+        <div className="mt-6">
+          <CertificateDisplayFormal certificate={certificate} />
+        </div>
+
         {/* Actions */}
         <div className="mt-6 space-y-4">
           <div className="flex gap-4">
-            <CertificateDownload
-              certificate={certificate}
-              qrCodeDataUrl={qrCodeDataUrl}
-            />
             {certificate.status === "valid" && !showRevokeForm && (
               <Button
                 variant="destructive"
