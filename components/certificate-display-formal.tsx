@@ -56,27 +56,30 @@ const NAUB_ACADEMIC_SECRETARY_NAME = "Mohammed Musa Bombo";
 export function CertificateDisplayFormal({ certificate }: CertificateDisplayProps) {
   const certificateRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * Printing uses the standard "print only this element" CSS technique:
+   * everything on the page is hidden except the certificate, which is
+   * repositioned to fill the printable A4 page (see the @media print
+   * rules in CERTIFICATE_DISPLAY_STYLES below). This prints the
+   * certificate exactly as it already renders on screen — same fonts,
+   * same already-loaded images, no separate window or re-injected HTML
+   * that can fall out of sync with the live layout.
+   */
   const handlePrint = () => {
-    if (!certificateRef.current) return;
-    const printWindow = window.open("", "", "width=1100,height=850");
-    if (!printWindow) return;
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8" />
-          <title>${certificate.certificateNumber}</title>
-          <style>${CERTIFICATE_PRINT_STYLES}</style>
-        </head>
-        <body>${certificateRef.current.innerHTML}</body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => printWindow.print(), 250);
+    window.print();
   };
 
+  /**
+   * PDF export via html2canvas + jsPDF.
+   *
+   * html2canvas cannot parse modern CSS colour functions (oklch/oklab)
+   * that the Tailwind/shadcn theme defines on ancestor elements — it
+   * throws while walking the document's stylesheets, which previously
+   * surfaced as a generic "Could not generate a PDF" error. The fix is
+   * to render an isolated clone of the document for html2canvas that
+   * contains ONLY this component's own plain-colour CSS (no Tailwind,
+   * no theme variables), via the onclone callback.
+   */
   const handleDownloadPDF = async () => {
     if (!certificateRef.current) return;
     try {
@@ -86,7 +89,16 @@ export function CertificateDisplayFormal({ certificate }: CertificateDisplayProp
       const canvas = await html2canvas(certificateRef.current, {
         scale: 2,
         useCORS: true,
-        backgroundColor: "#ffffff",
+        backgroundColor: "#fffdfa",
+        onclone: (clonedDoc) => {
+          // Strip every stylesheet/style tag from the cloned document —
+          // these can contain oklch()/lab() colour functions html2canvas
+          // can't parse — and replace with only our own plain-colour CSS.
+          clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => el.remove());
+          const style = clonedDoc.createElement("style");
+          style.textContent = CERTIFICATE_DISPLAY_STYLES;
+          clonedDoc.head.appendChild(style);
+        },
       });
 
       const imgData = canvas.toDataURL("image/png");
@@ -99,9 +111,12 @@ export function CertificateDisplayFormal({ certificate }: CertificateDisplayProp
       const yOffset = Math.max(margin, (pageHeight - imgHeightMm) / 2);
       pdf.addImage(imgData, "PNG", margin, yOffset, usableWidth, imgHeightMm);
       pdf.save(`${certificate.certificateNumber.replace(/\//g, "-")}.pdf`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("[Certificate] PDF export failed:", error);
-      alert("Could not generate a PDF. Please try Print instead and save as PDF from the print dialog.");
+      alert(
+        `Could not generate a PDF (${error?.message || "unknown error"}). ` +
+          "Please try Print instead and choose 'Save as PDF' in the print dialog."
+      );
     }
   };
 
@@ -119,7 +134,7 @@ export function CertificateDisplayFormal({ certificate }: CertificateDisplayProp
       </div>
 
       <div className="overflow-x-auto rounded-lg border bg-muted/30 p-4 sm:p-8">
-        <div ref={certificateRef} className="naub-certificate">
+        <div ref={certificateRef} className="naub-certificate naub-print-area">
           <div className="naub-watermark" aria-hidden="true" />
 
           {/* ===== FIXED LETTERHEAD — header ===== */}
@@ -347,21 +362,30 @@ const CERTIFICATE_DISPLAY_STYLES = `
   .naub-certificate { padding: 28px 20px; }
   .naub-student-name, .naub-programme { min-width: 0; font-size: 15px; }
 }
-`;
 
-const CERTIFICATE_PRINT_STYLES = `
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 210mm; height: 297mm; }
-  body { padding: 10mm; background: #ffffff; display: flex; justify-content: center; align-items: flex-start; }
-  .naub-certificate {
-    width: 190mm !important;
-    max-width: 190mm !important;
-    border: 3px double #7a1f1f;
-    padding: 12mm 14mm 10mm;
-    background: #fffdfa;
-    font-family: Georgia, 'Times New Roman', serif;
-    position: relative;
-    overflow: hidden;
+/*
+ * Print-only-this-element technique: hide everything on the page except
+ * the certificate itself, then reposition it to fill the printable A4
+ * page. This prints the certificate exactly as it already renders on
+ * screen, with no separate window, no re-injected HTML, and no relative
+ * image path issues.
+ */
+@media print {
+  @page { size: A4 portrait; margin: 10mm; }
+
+  body * { visibility: hidden; }
+
+  .naub-print-area, .naub-print-area * { visibility: visible; }
+
+  .naub-print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border-width: 2px !important;
+    box-shadow: none !important;
   }
-  ${CERTIFICATE_DISPLAY_STYLES}
+}
 `;

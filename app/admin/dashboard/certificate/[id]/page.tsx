@@ -255,70 +255,7 @@ export default function CertificateDetailPage() {
           <CertificateDisplayFormal certificate={certificate} />
         </div>
 
-        {/* ── 2. System Record Cards ── */}
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
-          {/* Student / Graduate Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Student / Graduate Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Student / Graduate Name</p>
-                <p className="font-semibold">{certificate.studentName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Programme of Study</p>
-                <p className="font-semibold">{certificate.programmeOfStudy}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Matriculation Number</p>
-                <p className="font-semibold">{certificate.matriculationNumber || "Not recorded"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Date of Birth</p>
-                <p className="font-semibold">{certificate.dateOfBirth ? formatDate(certificate.dateOfBirth) : "Not recorded"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Class of Degree</p>
-                <p className="font-semibold">{certificate.classOfDegree || "Not recorded"}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Certificate Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Certificate Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Certificate ID</p>
-                <p className="font-mono font-semibold text-sm break-all">{certificate.id}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Certificate Number (Ref. No)</p>
-                <p className="font-semibold">{certificate.certificateNumber}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <Badge className={getCertificateStatusColor(certificate.status)}>
-                  {certificate.status}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Date Issued</p>
-                <p className="font-semibold">{formatDate(certificate.dateIssued)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Date of Award</p>
-                <p className="font-semibold">{formatDate(certificate.dateOfAward || certificate.dateIssued)}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* ── 3. Blockchain Verification ── */}
+        {/* ── 2. Blockchain Verification ── */}
         <div className="mb-6">
           <Card>
             <CardHeader>
