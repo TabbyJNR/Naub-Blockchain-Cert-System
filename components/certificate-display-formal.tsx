@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import type { Certificate } from "@/lib/database";
 import { Button } from "@/components/ui/button";
-import { Download, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
 import { formatOrdinalDate } from "@/lib/certificate-utils";
 
 interface CertificateDisplayProps {
@@ -69,67 +69,12 @@ export function CertificateDisplayFormal({ certificate }: CertificateDisplayProp
     window.print();
   };
 
-  /**
-   * PDF export via html2canvas + jsPDF.
-   *
-   * html2canvas cannot parse modern CSS colour functions (oklch/oklab)
-   * that the Tailwind/shadcn theme defines on ancestor elements — it
-   * throws while walking the document's stylesheets, which previously
-   * surfaced as a generic "Could not generate a PDF" error. The fix is
-   * to render an isolated clone of the document for html2canvas that
-   * contains ONLY this component's own plain-colour CSS (no Tailwind,
-   * no theme variables), via the onclone callback.
-   */
-  const handleDownloadPDF = async () => {
-    if (!certificateRef.current) return;
-    try {
-      const html2canvas = (await import("html2canvas")).default;
-      const { jsPDF } = await import("jspdf");
-
-      const canvas = await html2canvas(certificateRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#fffdfa",
-        onclone: (clonedDoc) => {
-          // Strip every stylesheet/style tag from the cloned document —
-          // these can contain oklch()/lab() colour functions html2canvas
-          // can't parse — and replace with only our own plain-colour CSS.
-          clonedDoc.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => el.remove());
-          const style = clonedDoc.createElement("style");
-          style.textContent = CERTIFICATE_DISPLAY_STYLES;
-          clonedDoc.head.appendChild(style);
-        },
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageWidth = 210;
-      const pageHeight = 297;
-      const margin = 10;
-      const usableWidth = pageWidth - margin * 2;
-      const imgHeightMm = (canvas.height / canvas.width) * usableWidth;
-      const yOffset = Math.max(margin, (pageHeight - imgHeightMm) / 2);
-      pdf.addImage(imgData, "PNG", margin, yOffset, usableWidth, imgHeightMm);
-      pdf.save(`${certificate.certificateNumber.replace(/\//g, "-")}.pdf`);
-    } catch (error: any) {
-      console.error("[Certificate] PDF export failed:", error);
-      alert(
-        `Could not generate a PDF (${error?.message || "unknown error"}). ` +
-          "Please try Print instead and choose 'Save as PDF' in the print dialog."
-      );
-    }
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <Button onClick={handlePrint} variant="outline" className="gap-2 bg-transparent">
           <Printer className="h-4 w-4" />
-          Print
-        </Button>
-        <Button onClick={handleDownloadPDF} variant="outline" className="gap-2 bg-transparent">
-          <Download className="h-4 w-4" />
-          Download as PDF
+          Print / Save as PDF
         </Button>
       </div>
 

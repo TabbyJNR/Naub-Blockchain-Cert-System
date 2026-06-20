@@ -6,16 +6,25 @@
  *
  * The JWT is derived from on-chain role membership, not a database password.
  * Compromising the off-chain data does not allow forging admin credentials.
+ *
+ * Both steps are rate-limited per IP address to mitigate brute-force /
+ * spam attempts against the login flow.
  */
 
 import { NextResponse } from "next/server";
 import { ethers } from "ethers";
 import crypto from "crypto";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { isValidWalletAddress, isNonEmptyString } from "@/lib/validation";
 
 // In production, nonces would be stored in Redis/MongoDB with TTL.
 // For development, a simple in-memory map is used.
 const nonceStore = new Map<string, { nonce: string; issuedAt: number }>();
 const NONCE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+// Admin records handling permanent academic certificates should not stay
+// valid for long if a token is ever leaked — kept short deliberately.
+const JWT_EXPIRY_SECONDS = 2 * 3600; // 2 hours
 
 const JWT_SECRET = process.env.JWT_SECRET || "naub-dev-secret-change-in-production";
 
@@ -38,7 +47,9 @@ const REGISTRY_ADMIN_WALLETS: string[] = (
 
 function signJwt(payload: object): string {
   const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
-  const body = Buffer.from(JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 8 * 3600 })).toString("base64url");
+  const body = Buffer.from(
+    JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + JWT_EXPIRY_SECONDS }),
+  ).toString("base64url");
   const sig = crypto
     .createHmac("sha256", JWT_SECRET)
     .update(`${header}.${body}`)
@@ -50,23 +61,44 @@ function signJwt(payload: object): string {
 // POST /api/admin/login             — verifies EIP-191 signature and issues JWT
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
     const url = new URL(request.url);
     const step = url.searchParams.get("step");
 
     if (step === "nonce") {
-      const { walletAddress } = await request.json();
-      if (!walletAddress) {
-        return NextResponse.json({ error: "walletAddress required" }, { status: 400 });
+      // Up to 15 nonce requests per 5 minutes per IP.
+      const rateLimit = await checkRateLimit(`login-nonce:${ip}`, 15, 5 * 60 * 1000);
+      if (!rateLimit.allowed) {
+        return NextResponse.json(
+          { error: "Too many login attempts. Please wait a moment and try again." },
+          { status: 429 },
+        );
+      }
+
+      const body = await request.json().catch(() => ({}));
+      const { walletAddress } = body;
+      if (!isValidWalletAddress(walletAddress)) {
+        return NextResponse.json({ error: "A valid walletAddress is required" }, { status: 400 });
       }
       const nonce = crypto.randomBytes(16).toString("hex");
       nonceStore.set(walletAddress.toLowerCase(), { nonce, issuedAt: Date.now() });
       return NextResponse.json({ nonce });
     }
 
-    // Default: verify signature and issue JWT
-    const { walletAddress, signature, nonce } = await request.json();
+    // Up to 10 signature-verification attempts per 5 minutes per IP.
+    const rateLimit = await checkRateLimit(`login-verify:${ip}`, 10, 5 * 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many login attempts. Please wait a moment and try again." },
+        { status: 429 },
+      );
+    }
 
-    if (!walletAddress || !signature || !nonce) {
+    // Default: verify signature and issue JWT
+    const body = await request.json().catch(() => ({}));
+    const { walletAddress, signature, nonce } = body;
+
+    if (!isValidWalletAddress(walletAddress) || !isNonEmptyString(signature, 500) || !isNonEmptyString(nonce, 100)) {
       return NextResponse.json({ error: "walletAddress, signature and nonce are required" }, { status: 400 });
     }
 

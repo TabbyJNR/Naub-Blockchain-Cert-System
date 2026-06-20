@@ -4,10 +4,32 @@ import { blockchain } from "@/lib/blockchain";
 import { generateCertificateId, canonicalCertificatePayload, canonicalHolderPayload } from "@/lib/certificate-utils";
 import type { Certificate } from "@/lib/database";
 import crypto from "crypto";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import {
+  isNonEmptyString,
+  isValidDateString,
+  isValidOptionalString,
+  isValidHexHash,
+  isValidTxHash,
+  isValidBlockNumber,
+  sanitizeString,
+} from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const ip = getClientIp(request);
+
+    // Up to 30 issuance attempts per hour per IP. Generous enough for
+    // genuine batch-issuance sessions, tight enough to block spam/abuse.
+    const rateLimit = await checkRateLimit(`issue:${ip}`, 30, 60 * 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many issuance requests from this connection. Please wait a while and try again." },
+        { status: 429 },
+      );
+    }
+
+    const body = await request.json().catch(() => ({}));
     const {
       studentName,
       matriculationNumber,
@@ -29,19 +51,55 @@ export async function POST(request: Request) {
     // from the form, so it is always consistent across all certificates.
     const viceChancellor = "Professor Lawan Bala Buratai";
 
-    // Validate all eight required certificate fields
-    if (
-      !studentName ||
-      !matriculationNumber ||
-      !dateOfBirth ||
-      !programmeOfStudy ||
-      !classOfDegree ||
-      !dateOfAward ||
-      !certificateNumber
-    ) {
+    // ---- Input validation -------------------------------------------------
+    // Every field here can end up hashed and permanently anchored on the
+    // Ethereum Sepolia blockchain, so each is checked for presence, type,
+    // and a sane length before anything else happens.
+    const validationErrors: string[] = [];
+    if (!isNonEmptyString(studentName)) validationErrors.push("studentName");
+    if (!isNonEmptyString(matriculationNumber)) validationErrors.push("matriculationNumber");
+    if (!isValidDateString(dateOfBirth)) validationErrors.push("dateOfBirth");
+    if (!isNonEmptyString(programmeOfStudy)) validationErrors.push("programmeOfStudy");
+    if (!isNonEmptyString(classOfDegree)) validationErrors.push("classOfDegree");
+    if (!isValidDateString(dateOfAward)) validationErrors.push("dateOfAward");
+    if (!isNonEmptyString(certificateNumber)) validationErrors.push("certificateNumber");
+    if (!isValidOptionalString(ipfsCid, 300)) validationErrors.push("ipfsCid");
+    if (certificateHash !== undefined && !isValidHexHash(certificateHash)) validationErrors.push("certificateHash");
+    if (holderIdentityHash !== undefined && !isValidHexHash(holderIdentityHash)) validationErrors.push("holderIdentityHash");
+    if (onChainTransactionHash !== undefined && !isValidTxHash(onChainTransactionHash)) validationErrors.push("onChainTransactionHash");
+    if (onChainBlockNumber !== undefined && !isValidBlockNumber(onChainBlockNumber)) validationErrors.push("onChainBlockNumber");
+
+    if (validationErrors.length > 0) {
       return NextResponse.json(
-        { error: "Missing required fields: studentName, matriculationNumber, dateOfBirth, programmeOfStudy, classOfDegree, dateOfAward, certificateNumber" },
-        { status: 400 }
+        { error: `Invalid or missing field(s): ${validationErrors.join(", ")}` },
+        { status: 400 },
+      );
+    }
+
+    const cleanStudentName = sanitizeString(studentName);
+    const cleanMatriculationNumber = sanitizeString(matriculationNumber);
+    const cleanProgrammeOfStudy = sanitizeString(programmeOfStudy, 300);
+    const cleanClassOfDegree = sanitizeString(classOfDegree);
+    const cleanCertificateNumber = sanitizeString(certificateNumber);
+
+    // ---- Uniqueness check (defense in depth) -------------------------------
+    // The frontend already runs this check before requesting a MetaMask
+    // transaction (see /api/certificates/check-duplicate), but it is
+    // enforced again here in case that pre-flight step was ever bypassed.
+    // This is NOT something the smart contract alone can catch: the
+    // on-chain hash is a hash of ALL eight fields combined, so two
+    // genuinely different certificates that happen to reuse the same
+    // matriculation number or certificate number would still produce
+    // different hashes and would NOT be rejected by issueCertificate().
+    const duplicate = await database.findDuplicateIdentifiers(cleanMatriculationNumber, cleanCertificateNumber);
+    if (duplicate) {
+      const fieldLabel =
+        duplicate.field === "matriculationNumber" ? "Matriculation number" : "Certificate number (Ref. No)";
+      return NextResponse.json(
+        {
+          error: `${fieldLabel} is already in use by an existing certificate (${duplicate.existingCertificateId}). Each student's matriculation number and each certificate's Ref. No must be unique.`,
+        },
+        { status: 409 },
       );
     }
 
@@ -56,13 +114,13 @@ export async function POST(request: Request) {
           .createHash("sha256")
           .update(
             canonicalCertificatePayload({
-              studentName,
-              matriculationNumber,
+              studentName: cleanStudentName,
+              matriculationNumber: cleanMatriculationNumber,
               dateOfBirth,
-              programmeOfStudy,
-              classOfDegree,
+              programmeOfStudy: cleanProgrammeOfStudy,
+              classOfDegree: cleanClassOfDegree,
               dateOfAward,
-              certificateNumber,
+              certificateNumber: cleanCertificateNumber,
               viceChancellor,
             })
           )
@@ -73,7 +131,7 @@ export async function POST(request: Request) {
       holderIdentityHash ||
       crypto
         .createHash("sha256")
-        .update(canonicalHolderPayload(studentName, dateOfBirth))
+        .update(canonicalHolderPayload(cleanStudentName, dateOfBirth))
         .digest("hex");
 
     let transactionHash: string;
@@ -116,18 +174,18 @@ export async function POST(request: Request) {
 
     const certificate: Certificate = {
       id: certificateId,
-      studentName,
-      matriculationNumber,
+      studentName: cleanStudentName,
+      matriculationNumber: cleanMatriculationNumber,
       dateOfBirth,
-      programmeOfStudy,
-      classOfDegree,
+      programmeOfStudy: cleanProgrammeOfStudy,
+      classOfDegree: cleanClassOfDegree,
       dateOfAward,
-      certificateNumber,
+      certificateNumber: cleanCertificateNumber,
       viceChancellor,
       holderIdentityHash: finalHolderHash,
       ipfsCid: ipfsCid || `ipfs://demo-${certificateId}`,
-      institutionName,
-      certificateType,
+      institutionName: sanitizeString(institutionName, 300),
+      certificateType: sanitizeString(certificateType, 100),
       dateIssued,
       status: "valid",
       blockchainHash: finalCertHash,

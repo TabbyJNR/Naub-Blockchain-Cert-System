@@ -114,6 +114,46 @@ class DatabaseService {
     return { deleted: targets.length };
   }
 
+  /**
+   * Checks whether a matriculation number or certificate number is
+   * already in use by any existing certificate record (valid or
+   * revoked). These are meant to be globally unique identifiers — a
+   * student only has one matriculation number, and a Ref. No /
+   * certificate number should never be reused — so this check runs
+   * BEFORE the on-chain transaction is requested, preventing a
+   * Registry Admin from spending real Sepolia gas only to have the
+   * issuance rejected afterward.
+   *
+   * Note: this is a deliberate addition beyond the original Chapter 3
+   * design — the smart contract alone only rejects an exact duplicate
+   * combined certificate hash, which would NOT catch two genuinely
+   * different certificates that happen to reuse the same matriculation
+   * number or certificate number. This off-chain uniqueness check
+   * closes that gap.
+   */
+  async findDuplicateIdentifiers(
+    matriculationNumber: string,
+    certificateNumber: string,
+  ): Promise<{ field: "matriculationNumber" | "certificateNumber"; existingCertificateId: string } | null> {
+    const all = await this.getAllCertificates();
+
+    const matricMatch = all.find(
+      (c) => c.matriculationNumber.trim().toLowerCase() === matriculationNumber.trim().toLowerCase(),
+    );
+    if (matricMatch) {
+      return { field: "matriculationNumber", existingCertificateId: matricMatch.id };
+    }
+
+    const certNumberMatch = all.find(
+      (c) => c.certificateNumber.trim().toLowerCase() === certificateNumber.trim().toLowerCase(),
+    );
+    if (certNumberMatch) {
+      return { field: "certificateNumber", existingCertificateId: certNumberMatch.id };
+    }
+
+    return null;
+  }
+
   async getAnalytics() {
     const certs = await this.getAllCertificates();
     const verifications = await this.getVerifications();
@@ -126,6 +166,14 @@ class DatabaseService {
     // holderIdentityHash, never by name).
     const distinctActiveHolders = new Set(validCerts.map((c) => c.holderIdentityHash));
 
+    // Most recent 5 certificates by issuance date, for the dashboard's
+    // "Recent Certificates" panel. Computed here, in the same pass that
+    // already fetched all certificates, so the dashboard only needs a
+    // single API call instead of two separate full-table-scan requests.
+    const recentCertificates = [...certs]
+      .sort((a, b) => new Date(b.dateIssued).getTime() - new Date(a.dateIssued).getTime())
+      .slice(0, 5);
+
     return {
       totalCertificates: certs.length,
       validCertificates: validCerts.length,
@@ -133,6 +181,7 @@ class DatabaseService {
       totalVerifications: verifications.length,
       activeCertificateHolders: distinctActiveHolders.size,
       recentVerifications: verifications.slice(-10).reverse(),
+      recentCertificates,
     };
   }
 }

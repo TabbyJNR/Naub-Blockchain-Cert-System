@@ -33,6 +33,7 @@ interface Analytics {
   revokedCertificates: number;
   totalVerifications: number;
   activeCertificateHolders: number;
+  recentCertificates: Certificate[];
   recentVerifications: Array<{
     id: string;
     certificateId: string;
@@ -53,25 +54,22 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      const [certsResponse, analyticsResponse] = await Promise.all([
-        fetch("/api/certificates"),
-        fetch("/api/admin/analytics"),
-      ]);
-
-      if (certsResponse.ok) {
-        const certsData = await certsResponse.json();
-        setCertificates(certsData);
-      }
+      // Single API call: getAnalytics() already computes totals, the
+      // active-holder count, AND the 5 most recent certificates in one
+      // pass server-side, so the dashboard no longer needs a second,
+      // separate full-table-scan request to /api/certificates.
+      const analyticsResponse = await fetch("/api/admin/analytics");
 
       if (analyticsResponse.ok) {
         const analyticsData = await analyticsResponse.json();
         setAnalytics(analyticsData);
+        setCertificates(analyticsData.recentCertificates || []);
       }
 
-      // System is "Operational" only if both the certificate store and the
-      // analytics endpoint actually responded successfully — this reflects
-      // real backend/database health rather than a hardcoded label.
-      setSystemStatus(certsResponse.ok && analyticsResponse.ok ? "Operational" : "Degraded");
+      // System is "Operational" only if the analytics endpoint actually
+      // responded successfully — this reflects real backend/database
+      // health rather than a hardcoded label.
+      setSystemStatus(analyticsResponse.ok ? "Operational" : "Degraded");
     } catch (error) {
       console.error("[Dashboard] Error loading data:", error);
       setSystemStatus("Degraded");
@@ -283,11 +281,11 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {certificates.length > 5 && (
+            {(analytics?.totalCertificates ?? 0) > 5 && (
               <div className="mt-4 text-center">
                 <Link href="/admin/dashboard/certificates">
                   <Button variant="outline" className="gap-2">
-                    View all {certificates.length} certificates
+                    View all {analytics?.totalCertificates} certificates
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </Link>

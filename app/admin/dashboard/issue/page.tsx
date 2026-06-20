@@ -107,6 +107,37 @@ export default function IssueCertificatePage() {
         return;
       }
 
+      // Pre-flight duplicate check — runs BEFORE requesting a MetaMask
+      // transaction, so a Registry Admin is never asked to pay real
+      // Sepolia gas for an issuance that would be rejected anyway.
+      setStatusMessage("Checking matriculation number and certificate number are unique...");
+      try {
+        const dupCheckResponse = await fetch("/api/certificates/check-duplicate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            matriculationNumber: formData.matriculationNumber,
+            certificateNumber: formData.certificateNumber,
+          }),
+        });
+        const dupCheckData = await dupCheckResponse.json();
+        if (dupCheckData.duplicate) {
+          setIsLoading(false);
+          setStatusMessage(null);
+          toast({
+            title: "Duplicate identifier detected",
+            description: dupCheckData.message,
+            variant: "destructive",
+          });
+          return;
+        }
+      } catch {
+        // If the duplicate check itself fails (e.g. network issue), don't
+        // block issuance — the same check runs again server-side in
+        // /api/certificates/issue as defense in depth.
+      }
+      setStatusMessage(null);
+
       const contractAddress = await getRegistryContractAddress();
       let onChainTransactionHash: string | undefined;
       let onChainBlockNumber: number | undefined;
