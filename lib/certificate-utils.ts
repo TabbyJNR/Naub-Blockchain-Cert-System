@@ -69,6 +69,19 @@ export const degreeClasses = [
 ];
 
 /**
+ * The Vice Chancellor's name is a fixed institutional letterhead detail,
+ * not something entered per-certificate. It is defined ONCE here and
+ * imported everywhere it's needed — the issue form's hash computation,
+ * the issue API route, and the certificate display component — so the
+ * value used to compute the on-chain certificate hash can never silently
+ * drift from the value shown on the printed certificate. A mismatch
+ * between these would be a serious bug: the certificate hash anchored
+ * on Sepolia would no longer match what re-hashing the displayed
+ * certificate produces.
+ */
+export const NAUB_VICE_CHANCELLOR_NAME = "Professor Lawan Bala Buratai";
+
+/**
  * Canonical certificate payload for SHA-256 hashing.
  * All eight required fields are concatenated in a fixed order.
  * The browser uses this same order via the Web Crypto API (SubtleCrypto).

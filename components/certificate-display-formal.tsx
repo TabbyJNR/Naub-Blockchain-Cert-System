@@ -4,7 +4,7 @@ import { useRef } from "react";
 import type { Certificate } from "@/lib/database";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import { formatOrdinalDate } from "@/lib/certificate-utils";
+import { formatOrdinalDate, NAUB_VICE_CHANCELLOR_NAME } from "@/lib/certificate-utils";
 
 interface CertificateDisplayProps {
   certificate: Certificate;
@@ -42,9 +42,10 @@ interface CertificateDisplayProps {
 // ---------------------------------------------------------------------------
 // Fixed letterhead constants — edit here if the institution's signatories
 // or printed details change. These are intentionally NOT pulled from the
-// certificate record.
+// certificate record. (NAUB_VICE_CHANCELLOR_NAME is imported from
+// certificate-utils since it also drives the on-chain hash computation —
+// it must stay identical in both places.)
 // ---------------------------------------------------------------------------
-const NAUB_VICE_CHANCELLOR_NAME = "Professor Lawan Bala Buratai";
 const NAUB_VICE_CHANCELLOR_CREDENTIALS = "BSc, Msc (UNIMAID), Ph.D (ABU), mNSBMB, mNBS, GCNNS, FCAL";
 
 const NAUB_REGISTRAR_NAME = "Lt Col OS Job";

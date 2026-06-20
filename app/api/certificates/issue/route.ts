@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { database } from "@/lib/database";
 import { blockchain } from "@/lib/blockchain";
-import { generateCertificateId, canonicalCertificatePayload, canonicalHolderPayload } from "@/lib/certificate-utils";
+import { generateCertificateId, canonicalCertificatePayload, canonicalHolderPayload, NAUB_VICE_CHANCELLOR_NAME } from "@/lib/certificate-utils";
 import type { Certificate } from "@/lib/database";
 import crypto from "crypto";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
     // Vice Chancellor is a fixed institutional constant — not submitted
     // from the form, so it is always consistent across all certificates.
-    const viceChancellor = "Professor Lawan Bala Buratai";
+    const viceChancellor = NAUB_VICE_CHANCELLOR_NAME;
 
     // ---- Input validation -------------------------------------------------
     // Every field here can end up hashed and permanently anchored on the

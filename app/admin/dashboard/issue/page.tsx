@@ -28,6 +28,7 @@ import {
   canonicalHolderPayload,
   certificateCategories,
   degreeClasses,
+  NAUB_VICE_CHANCELLOR_NAME,
 } from "@/lib/certificate-utils";
 import { getRegistryContractAddress, issueCertificateOnChain } from "@/lib/contract-client";
 import { NaubBrand } from "@/components/naub-brand";
@@ -86,7 +87,9 @@ export default function IssueCertificatePage() {
       return null;
     }
 
-    const certificateHash = await sha256Hex(canonicalCertificatePayload(formData));
+    const certificateHash = await sha256Hex(
+      canonicalCertificatePayload({ ...formData, viceChancellor: NAUB_VICE_CHANCELLOR_NAME }),
+    );
     const holderIdentityHash = await sha256Hex(
       canonicalHolderPayload(formData.studentName, formData.dateOfBirth),
     );
