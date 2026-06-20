@@ -137,11 +137,16 @@ export async function POST(request: Request) {
     let transactionHash: string;
     let blockNumber: number;
 
-    if (onChainTransactionHash && typeof onChainBlockNumber === "number") {
+    const coercedBlockNumber =
+      onChainBlockNumber !== undefined && onChainBlockNumber !== null
+        ? Number(onChainBlockNumber)
+        : undefined;
+
+    if (onChainTransactionHash && coercedBlockNumber !== undefined && Number.isInteger(coercedBlockNumber)) {
       // The browser already submitted and confirmed the transaction directly
       // via the Registry Admin's own MetaMask wallet. Record the real result.
       transactionHash = onChainTransactionHash;
-      blockNumber = onChainBlockNumber;
+      blockNumber = coercedBlockNumber;
 
       // Keep the local cache in sync for fast verification lookups.
       try {

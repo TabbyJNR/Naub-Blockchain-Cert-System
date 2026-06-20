@@ -9,6 +9,13 @@
  *
  * Both steps are rate-limited per IP address to mitigate brute-force /
  * spam attempts against the login flow.
+ *
+ * Nonces are stored in MongoDB rather than in-memory: Vercel serverless
+ * functions do not guarantee that the "request a nonce" call and the
+ * later "verify the signature" call land on the same running instance.
+ * An in-memory store would be invisible across instances, causing
+ * intermittent "invalid or expired nonce" failures even on a correct,
+ * well-timed sign-in attempt.
  */
 
 import { NextResponse } from "next/server";
@@ -16,11 +23,15 @@ import { ethers } from "ethers";
 import crypto from "crypto";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { isValidWalletAddress, isNonEmptyString } from "@/lib/validation";
+import { connectToDatabase } from "@/lib/mongodb";
+import { NonceModel } from "@/lib/nonce-model";
 
-// In production, nonces would be stored in Redis/MongoDB with TTL.
-// For development, a simple in-memory map is used.
-const nonceStore = new Map<string, { nonce: string; issuedAt: number }>();
 const NONCE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+// Fallback in-memory store, used only if MongoDB is not configured at all
+// (e.g. local development without a MONGODB_URI). Never relied upon in
+// the deployed environment, where MongoDB is always configured.
+const memoryNonceStore = new Map<string, { nonce: string; issuedAt: number }>();
 
 // Admin records handling permanent academic certificates should not stay
 // valid for long if a token is ever leaked — kept short deliberately.
@@ -57,6 +68,37 @@ function signJwt(payload: object): string {
   return `${header}.${body}.${sig}`;
 }
 
+async function storeNonce(walletAddress: string, nonce: string): Promise<void> {
+  const connected = await connectToDatabase();
+  if (connected) {
+    await NonceModel.findOneAndUpdate(
+      { walletAddress },
+      { walletAddress, nonce, issuedAt: Date.now() },
+      { upsert: true },
+    );
+  } else {
+    memoryNonceStore.set(walletAddress, { nonce, issuedAt: Date.now() });
+  }
+}
+
+async function consumeNonce(walletAddress: string): Promise<{ nonce: string; issuedAt: number } | null> {
+  const connected = await connectToDatabase();
+  if (connected) {
+    const doc = await NonceModel.findOne({ walletAddress }).lean();
+    return doc ? { nonce: doc.nonce, issuedAt: doc.issuedAt } : null;
+  }
+  return memoryNonceStore.get(walletAddress) || null;
+}
+
+async function deleteNonce(walletAddress: string): Promise<void> {
+  const connected = await connectToDatabase();
+  if (connected) {
+    await NonceModel.deleteOne({ walletAddress });
+  } else {
+    memoryNonceStore.delete(walletAddress);
+  }
+}
+
 // POST /api/admin/login?step=nonce  — returns a nonce for the wallet to sign
 // POST /api/admin/login             — verifies EIP-191 signature and issues JWT
 export async function POST(request: Request) {
@@ -81,7 +123,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "A valid walletAddress is required" }, { status: 400 });
       }
       const nonce = crypto.randomBytes(16).toString("hex");
-      nonceStore.set(walletAddress.toLowerCase(), { nonce, issuedAt: Date.now() });
+      await storeNonce(walletAddress.toLowerCase(), nonce);
       return NextResponse.json({ nonce });
     }
 
@@ -102,7 +144,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "walletAddress, signature and nonce are required" }, { status: 400 });
     }
 
-    const stored = nonceStore.get(walletAddress.toLowerCase());
+    const stored = await consumeNonce(walletAddress.toLowerCase());
     if (!stored || stored.nonce !== nonce || Date.now() - stored.issuedAt > NONCE_TTL_MS) {
       return NextResponse.json({ error: "Invalid or expired nonce" }, { status: 401 });
     }
@@ -141,7 +183,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Wallet does not hold a recognised role on the CertificateRegistry contract" }, { status: 403 });
     }
 
-    nonceStore.delete(walletAddress.toLowerCase());
+    await deleteNonce(walletAddress.toLowerCase());
 
     const token = signJwt({ walletAddress: recoveredAddress, role });
     return NextResponse.json({ success: true, token, role, walletAddress: recoveredAddress });

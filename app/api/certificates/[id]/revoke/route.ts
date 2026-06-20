@@ -55,11 +55,16 @@ export async function POST(
     let revocationTxHash: string;
     let revocationBlockNumber: number;
 
-    if (onChainTransactionHash && typeof onChainBlockNumber === "number") {
+    const coercedBlockNumber =
+      onChainBlockNumber !== undefined && onChainBlockNumber !== null
+        ? Number(onChainBlockNumber)
+        : undefined;
+
+    if (onChainTransactionHash && coercedBlockNumber !== undefined && Number.isInteger(coercedBlockNumber)) {
       // The browser already submitted and confirmed revokeCertificate()
       // directly via the Registry Admin's own MetaMask wallet.
       revocationTxHash = onChainTransactionHash;
-      revocationBlockNumber = onChainBlockNumber;
+      revocationBlockNumber = coercedBlockNumber;
     } else {
       // Fallback path: server signs and submits, or simulates.
       const revocationData = JSON.stringify({

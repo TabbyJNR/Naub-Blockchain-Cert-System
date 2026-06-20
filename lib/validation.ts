@@ -47,9 +47,22 @@ export function isValidTxHash(value: unknown): value is string {
   return typeof value === "string" && /^0x[a-f0-9]{64}$/i.test(value.trim());
 }
 
-/** True if value is a non-negative integer (e.g. a block number). */
+/**
+ * True if value is a non-negative integer (e.g. a block number).
+ * Accepts either a clean JS number or a numeric string, since values
+ * that cross a browser -> JSON -> server boundary can sometimes arrive
+ * as one or the other depending on the provider/runtime — this field is
+ * on the critical path for recording a confirmed blockchain transaction,
+ * so it is deliberately tolerant of both forms rather than rejecting a
+ * genuinely valid block number over a representation difference.
+ */
 export function isValidBlockNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+  if (typeof value === "number") return Number.isInteger(value) && value >= 0;
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value);
+    return Number.isInteger(n) && n >= 0;
+  }
+  return false;
 }
 
 /** True if value, once trimmed, is a non-empty string of reasonable length for a long-form reason/note. */

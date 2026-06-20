@@ -131,10 +131,12 @@ export default function IssueCertificatePage() {
           });
           return;
         }
-      } catch {
+      } catch (dupCheckError) {
         // If the duplicate check itself fails (e.g. network issue), don't
         // block issuance — the same check runs again server-side in
-        // /api/certificates/issue as defense in depth.
+        // /api/certificates/issue as defense in depth. Still log it so a
+        // pattern of failures here is visible during debugging.
+        console.warn("[Issue] Pre-flight duplicate check failed, continuing:", dupCheckError);
       }
       setStatusMessage(null);
 
@@ -182,7 +184,7 @@ export default function IssueCertificatePage() {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
         toast({
@@ -192,17 +194,32 @@ export default function IssueCertificatePage() {
         setTimeout(() => {
           router.push(`/admin/dashboard/certificate/${data.certificate.id}`);
         }, 1000);
+      } else if (onChainTransactionHash) {
+        // The on-chain transaction already succeeded (real Sepolia gas was
+        // spent) but saving the record failed — this needs to be loud and
+        // specific, not a generic message, since the certificate now
+        // exists on-chain without a matching database record.
+        toast({
+          title: "Transaction succeeded, but saving the record failed",
+          description:
+            `${data.error || "Unknown error"} — Your transaction was confirmed on Sepolia ` +
+            `(hash: ${onChainTransactionHash.slice(0, 10)}...). Please save this transaction hash ` +
+            `and contact support; do not retry issuing the same certificate.`,
+          variant: "destructive",
+        });
       } else {
         toast({
           title: "Issuance Failed",
-          description: data.error || "Failed to issue certificate",
+          description: data.error || `Request failed with status ${response.status}`,
           variant: "destructive",
         });
       }
-    } catch {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "An error occurred while issuing the certificate",
+        description: error?.message
+          ? `An error occurred while issuing the certificate: ${error.message}`
+          : "An unexpected error occurred while issuing the certificate. Please try again.",
         variant: "destructive",
       });
     } finally {

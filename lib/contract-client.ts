@@ -78,7 +78,7 @@ export async function issueCertificateOnChain(
 
   return {
     transactionHash: tx.hash,
-    blockNumber: receipt.blockNumber,
+    blockNumber: Number(receipt.blockNumber),
   };
 }
 
@@ -107,6 +107,6 @@ export async function revokeCertificateOnChain(
 
   return {
     transactionHash: tx.hash,
-    blockNumber: receipt.blockNumber,
+    blockNumber: Number(receipt.blockNumber),
   };
 }
