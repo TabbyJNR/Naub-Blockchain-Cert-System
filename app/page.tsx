@@ -7,10 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { NaubBrand } from "@/components/naub-brand";
 import {
-  CheckCircle,
   Database,
   FileCheck,
   GraduationCap,
@@ -18,18 +16,8 @@ import {
   Lock,
   QrCode,
   Search,
-  Shield,
   UserRoundSearch,
 } from "lucide-react";
-
-const requirements = [
-  "Super Admin role control for Registry Admin wallets",
-  "Browser-side SHA-256 certificate and holder identity hashing",
-  "IPFS Content Identifier storage for certificate PDFs",
-  "Public verification through hash, certificate fields, PDF upload, or QR scan",
-  "Revocation trail with reason, timestamp, and blockchain evidence",
-  "NDPR separation of off-chain personal data from on-chain hashes",
-];
 
 export default function HomePage() {
   return (
@@ -56,20 +44,17 @@ export default function HomePage() {
       </header>
 
       <main>
-        <section className="container mx-auto grid gap-10 px-4 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-24">
-          <div className="space-y-7">
-            <Badge className="bg-secondary text-secondary-foreground">
-              Nigerian Army University Biu • Act No. 4 of 2018
-            </Badge>
+        <section className="container mx-auto px-4 py-16 lg:py-24">
+          <div className="mx-auto max-w-3xl space-y-7 text-center">
             <div className="space-y-5">
-              <h2 className="max-w-4xl text-balance text-4xl font-black leading-tight tracking-tight text-foreground md:text-6xl">
+              <h2 className="text-balance text-4xl font-black leading-tight tracking-tight text-foreground md:text-6xl">
                 Blockchain certificate management for trustworthy NAUB degree verification.
               </h2>
-              <p className="max-w-3xl text-balance text-lg leading-8 text-muted-foreground md:text-xl">
-                This prototype implements the Chapter 1–3 research design: a three-tier decentralised application that protects NAUB academic certificates from forgery, insider manipulation, delayed registry confirmation, and unverifiable revocation.
+              <p className="text-balance text-lg leading-8 text-muted-foreground md:text-xl">
+                A three-tier decentralised application that protects NAUB academic certificates from forgery, insider manipulation, delayed registry confirmation, and unverifiable revocation.
               </p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link href="/verify">
                 <Button size="lg" className="w-full gap-2 sm:w-auto">
                   <Search className="h-5 w-5" />
@@ -90,26 +75,6 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-
-          <Card className="border-primary/20 bg-card/90 shadow-2xl shadow-primary/10">
-            <CardHeader>
-              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <Shield className="h-8 w-8 text-primary" />
-              </div>
-              <CardTitle className="text-2xl">Chapter-aligned control model</CardTitle>
-              <CardDescription>
-                Ethereum smart-contract logic, off-chain data protection, and instant verification are separated exactly as specified in the system architecture.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              {requirements.map((requirement) => (
-                <div key={requirement} className="flex items-start gap-3 rounded-lg border border-primary/10 bg-accent/50 p-3">
-                  <CheckCircle className="mt-0.5 h-4 w-4 flex-none text-primary" />
-                  <span className="text-sm text-foreground">{requirement}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
         </section>
 
         <section className="container mx-auto grid gap-6 px-4 py-12 md:grid-cols-3">

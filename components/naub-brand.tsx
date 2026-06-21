@@ -23,9 +23,6 @@ export function NaubBrand({
         />
       </div>
       <div className="leading-tight">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
-          NAUB
-        </p>
         <h1 className="font-bold text-xl text-foreground">{title}</h1>
         <p className="text-xs text-muted-foreground">{subtitle}</p>
       </div>
