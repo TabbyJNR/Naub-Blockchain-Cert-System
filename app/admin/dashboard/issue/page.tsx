@@ -63,7 +63,6 @@ export default function IssueCertificatePage() {
     classOfDegree: "",
     dateOfAward: "",
     certificateNumber: "",
-    ipfsCid: "",
   });
 
   const requiredFields = [
@@ -143,6 +142,33 @@ export default function IssueCertificatePage() {
       }
       setStatusMessage(null);
 
+      // Generate the certificate PDF and pin it to IPFS BEFORE requesting
+      // the MetaMask transaction, so the real CID can be included in the
+      // on-chain issueCertificate() call itself — keeping the blockchain
+      // record and the actual uploaded document consistent.
+      let preparedIpfsCid = "";
+      try {
+        setStatusMessage("Generating certificate document and uploading to IPFS...");
+        const ipfsResponse = await fetch("/api/certificates/prepare-ipfs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentName: formData.studentName,
+            programmeOfStudy: formData.programmeOfStudy,
+            classOfDegree: formData.classOfDegree,
+            dateOfAward: formData.dateOfAward,
+            certificateNumber: formData.certificateNumber,
+          }),
+        });
+        const ipfsData = await ipfsResponse.json().catch(() => ({}));
+        if (ipfsData.ipfsCid) {
+          preparedIpfsCid = ipfsData.ipfsCid;
+        }
+      } catch (ipfsError) {
+        console.warn("[Issue] IPFS preparation failed, continuing without a real CID:", ipfsError);
+      }
+      setStatusMessage(null);
+
       const contractAddress = await getRegistryContractAddress();
       let onChainTransactionHash: string | undefined;
       let onChainBlockNumber: number | undefined;
@@ -154,7 +180,7 @@ export default function IssueCertificatePage() {
             contractAddress,
             hashes.certificateHash,
             hashes.holderIdentityHash,
-            formData.ipfsCid,
+            preparedIpfsCid,
           );
           onChainTransactionHash = result.transactionHash;
           onChainBlockNumber = result.blockNumber;
@@ -182,6 +208,7 @@ export default function IssueCertificatePage() {
           ...hashes,
           certificateType: "DEGREE",
           institutionName: "Nigerian Army University Biu",
+          ipfsCid: preparedIpfsCid || undefined,
           onChainTransactionHash,
           onChainBlockNumber,
         }),
@@ -293,10 +320,6 @@ export default function IssueCertificatePage() {
                 <div className="space-y-2">
                   <Label htmlFor="certificateNumber">Certificate Number *</Label>
                   <Input id="certificateNumber" placeholder="NAUB/CERT/2026/0001" value={formData.certificateNumber} onChange={(e) => handleChange("certificateNumber", e.target.value)} required />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="ipfsCid">IPFS CID / Pinata Reference</Label>
-                  <Input id="ipfsCid" placeholder="Optional demo CID; backend will generate a placeholder if empty" value={formData.ipfsCid} onChange={(e) => handleChange("ipfsCid", e.target.value)} />
                 </div>
               </section>
 

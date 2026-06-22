@@ -5,6 +5,8 @@ import { generateCertificateId, canonicalCertificatePayload, canonicalHolderPayl
 import type { Certificate } from "@/lib/database";
 import crypto from "crypto";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { generateCertificatePdf } from "@/lib/certificate-pdf";
+import { uploadToIpfs } from "@/lib/ipfs";
 import {
   isNonEmptyString,
   isValidDateString,
@@ -177,6 +179,39 @@ export async function POST(request: Request) {
       blockNumber = blockchainRecord.blockNumber;
     }
 
+    // ---- IPFS CID -----------------------------------------------------
+    // The common path: the frontend already generated the PDF and
+    // uploaded it to IPFS via /api/certificates/prepare-ipfs BEFORE
+    // requesting the MetaMask transaction, so the same CID is included
+    // in both the on-chain issueCertificate() call and this saved record
+    // — keeping them consistent. This is only a fallback for the rare
+    // case (e.g. simulation mode / no contract configured) where that
+    // didn't happen.
+    let finalIpfsCid = ipfsCid;
+    if (!finalIpfsCid) {
+      try {
+        const pdfBytes = await generateCertificatePdf({
+          studentName: cleanStudentName,
+          programmeOfStudy: cleanProgrammeOfStudy,
+          classOfDegree: cleanClassOfDegree,
+          dateOfAward,
+          certificateNumber: cleanCertificateNumber,
+        });
+        const uploadResult = await uploadToIpfs(
+          pdfBytes,
+          `${cleanCertificateNumber.replace(/\//g, "-")}.pdf`,
+        );
+        if (uploadResult) {
+          finalIpfsCid = `ipfs://${uploadResult.cid}`;
+        }
+      } catch (pdfError) {
+        console.error("[API] Certificate PDF generation/IPFS upload failed:", pdfError);
+      }
+    }
+    if (!finalIpfsCid) {
+      finalIpfsCid = `ipfs://demo-${certificateId}`;
+    }
+
     const certificate: Certificate = {
       id: certificateId,
       studentName: cleanStudentName,
@@ -188,7 +223,7 @@ export async function POST(request: Request) {
       certificateNumber: cleanCertificateNumber,
       viceChancellor,
       holderIdentityHash: finalHolderHash,
-      ipfsCid: ipfsCid || `ipfs://demo-${certificateId}`,
+      ipfsCid: finalIpfsCid,
       institutionName: sanitizeString(institutionName, 300),
       certificateType: sanitizeString(certificateType, 100),
       dateIssued,

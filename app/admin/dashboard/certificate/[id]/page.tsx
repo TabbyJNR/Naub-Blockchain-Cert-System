@@ -290,6 +290,23 @@ export default function CertificateDetailPage() {
                 <p className="text-sm text-muted-foreground">Holder Identity Hash (NDPR-safe)</p>
                 <p className="font-mono text-xs break-all bg-muted p-2 rounded">{certificate.holderIdentityHash}</p>
               </div>
+              {certificate.ipfsCid && !certificate.ipfsCid.startsWith("ipfs://demo-") && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Certificate Document (IPFS)</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono text-xs break-all bg-muted p-2 rounded flex-1">{certificate.ipfsCid}</p>
+                    <a
+                      href={`https://gateway.pinata.cloud/ipfs/${certificate.ipfsCid.replace("ipfs://", "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button variant="outline" size="icon" title="View certificate PDF on IPFS">
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+              )}
               {certificate.status === "revoked" && certificate.revocationTxHash && (
                 <div className="border-t pt-4">
                   <p className="text-sm text-muted-foreground">Revocation Transaction</p>
