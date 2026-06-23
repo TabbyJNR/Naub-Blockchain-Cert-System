@@ -115,7 +115,17 @@ export default function HolderPortalPage() {
                   <Button size="sm" variant="outline" className="gap-2 bg-transparent" onClick={() => navigator.clipboard.writeText(certificate.blockchainHash)}><Copy className="h-4 w-4" /> Copy Hash</Button>
                   <Link href={`/verify?id=${certificate.id}`}><Button size="sm" className="gap-2"><ExternalLink className="h-4 w-4" /> Verify</Button></Link>
                   <Button size="sm" variant="secondary" className="gap-2" onClick={() => navigator.clipboard.writeText(verificationUrl(certificate))}><QrCode className="h-4 w-4" /> Copy Link</Button>
-                  {certificate.ipfsCid && <Button size="sm" variant="ghost" className="gap-2"><Download className="h-4 w-4" /> {certificate.ipfsCid.replace("ipfs://", "")}</Button>}
+                  {certificate.ipfsCid && !certificate.ipfsCid.startsWith("ipfs://demo-") && (
+                    <a
+                      href={`https://gateway.pinata.cloud/ipfs/${certificate.ipfsCid.replace("ipfs://", "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button size="sm" variant="ghost" className="gap-2">
+                        <Download className="h-4 w-4" /> View Certificate PDF
+                      </Button>
+                    </a>
+                  )}
                 </div>
               </CardContent>
             </Card>

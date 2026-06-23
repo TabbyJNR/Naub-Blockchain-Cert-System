@@ -369,7 +369,7 @@ export default function IssueCertificatePage() {
             <CardContent className="space-y-3 text-sm text-muted-foreground">
               <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />FR-05 fields are captured in the issuance form.</p>
               <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />FR-06 hashes are computed in the browser.</p>
-              <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />FR-07/FR-08 metadata includes IPFS CID, certificate type, institution, and timestamp.</p>
+              <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />FR-07/FR-08 — certificate PDF is generated and pinned to IPFS automatically. The real CID is anchored on-chain.</p>
               <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />NFR-07 keeps personally identifiable data off-chain.</p>
             </CardContent>
           </Card>

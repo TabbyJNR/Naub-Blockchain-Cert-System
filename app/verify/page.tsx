@@ -260,6 +260,25 @@ export default function VerifyPage() {
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">Block: {blockchainInfo?.blockNumber}</p>
                     </div>
+                    {certificate.ipfsCid && !certificate.ipfsCid.startsWith("ipfs://demo-") && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Certificate Document (IPFS)</p>
+                        <div className="flex items-center gap-2">
+                          <div className="bg-muted p-2 rounded font-mono text-xs break-all flex-1">
+                            {certificate.ipfsCid}
+                          </div>
+                          <a
+                            href={`https://gateway.pinata.cloud/ipfs/${certificate.ipfsCid.replace("ipfs://", "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Button variant="outline" size="icon" title="View certificate PDF on IPFS">
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          </a>
+                        </div>
+                      </div>
+                    )}
                     {certificate.status === "revoked" && blockchainInfo?.revocationTxHash && (
                       <div className="border-t pt-4">
                         <p className="text-sm text-muted-foreground mb-1">Revocation Transaction</p>
