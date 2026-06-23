@@ -21,7 +21,6 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  FileText,
   ExternalLink,
   QrCode,
 } from "lucide-react";
@@ -46,7 +45,6 @@ interface PublicCertificate {
 export default function VerifyPage() {
   const searchParams = useSearchParams();
   const [certificateId, setCertificateId] = useState("");
-  const [fieldHashNotice, setFieldHashNotice] = useState("");
   const [certificate, setCertificate] = useState<PublicCertificate | null>(null);
   const [blockchainInfo, setBlockchainInfo] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -98,19 +96,6 @@ export default function VerifyPage() {
     verifyById(certificateId.trim());
   };
 
-  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const text = await file.text().catch(() => "");
-    const hashMatch = text.match(/[a-f0-9]{64}/i);
-    if (hashMatch) {
-      setCertificateId(hashMatch[0]);
-      verifyById(hashMatch[0]);
-      setFieldHashNotice("Extracted a 64-character SHA-256 hash from the uploaded certificate file.");
-    } else {
-      setFieldHashNotice("No embedded hash was found in this demo PDF/text upload. Paste the certificate hash or scan its QR code.");
-    }
-  };
 
   const handleQRScan = (data: string) => {
     setShowScanner(false);
@@ -167,18 +152,6 @@ export default function VerifyPage() {
                   {isSearching ? "Verifying..." : "Verify"}
                 </Button>
               </div>
-              <div className="grid gap-3 rounded-lg border border-primary/10 bg-accent/40 p-4 md:grid-cols-4">
-                <div className="flex items-center gap-2 text-sm font-medium"><Search className="h-4 w-4 text-primary" /> Direct paste</div>
-                <div className="flex items-center gap-2 text-sm font-medium"><FileText className="h-4 w-4 text-primary" /> Field form hash</div>
-                <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
-                  <FileText className="h-4 w-4 text-primary" /> PDF upload
-                  <input type="file" accept=".pdf,.txt,.html" onChange={handlePdfUpload} className="sr-only" />
-                </label>
-                <button type="button" onClick={() => setShowScanner(true)} className="flex items-center gap-2 text-sm font-medium text-left">
-                  <QrCode className="h-4 w-4 text-primary" /> QR scan
-                </button>
-              </div>
-              {fieldHashNotice && <p className="text-center text-sm text-muted-foreground">{fieldHashNotice}</p>}
               <div className="flex items-center justify-center">
                 <Button
                   type="button"

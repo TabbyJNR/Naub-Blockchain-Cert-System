@@ -10,9 +10,8 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import { Wallet, ArrowLeft, ShieldCheck, Loader2 } from "lucide-react";
+import { Wallet, ArrowLeft, Loader2 } from "lucide-react";
 import { NaubBrand } from "@/components/naub-brand";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -130,12 +129,9 @@ export default function AdminLoginPage() {
           <div className="flex justify-center">
             <NaubBrand title="NAUB Registry Portal" subtitle="Super Admin / Registry Admin access" />
           </div>
-          <div>
-            <CardTitle className="text-2xl flex items-center justify-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> Wallet-Based Access</CardTitle>
-            <CardDescription>
-              Sign in with your registered Ethereum wallet to issue, revoke, and monitor NAUB blockchain degree certificates
-            </CardDescription>
-          </div>
+          <CardDescription className="text-center">
+            Sign in with your registered Ethereum wallet to issue, revoke, and monitor NAUB blockchain degree certificates
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button onClick={handleConnectAndSignIn} className="w-full gap-2" disabled={isLoading}>
@@ -148,14 +144,6 @@ export default function AdminLoginPage() {
               {walletAddress}
             </p>
           )}
-
-          <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
-            <p>
-              Sign-in uses an EIP-191 message signature — no password is stored. Your wallet must hold the{" "}
-              <strong>SUPERADMIN_ROLE</strong> or <strong>CERTIFICATE_ROLE</strong> on the CertificateRegistry smart
-              contract.
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
