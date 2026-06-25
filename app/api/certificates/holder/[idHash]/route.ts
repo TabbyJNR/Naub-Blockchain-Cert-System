@@ -28,16 +28,24 @@ export async function GET(
 
     const certificates = await database.getAllCertificates();
 
-    // Return only public-safe fields — no personal data (NDPR compliance)
+    // Return the fields the holder needs to see their own certificate.
+    // studentName is safe to return here — the holder already knows their
+    // own name; they supplied it to generate the identity hash. transactionHash
+    // is included so the holder can verify the record on Etherscan.
     const holderCertificates = certificates
       .filter((cert) => cert.holderIdentityHash === idHash)
       .map((cert) => ({
         id: cert.id,
+        studentName: cert.studentName,
         programmeOfStudy: cert.programmeOfStudy,
         classOfDegree: cert.classOfDegree,
         dateOfAward: cert.dateOfAward,
+        dateOfBirth: cert.dateOfBirth,
+        matriculationNumber: cert.matriculationNumber,
         status: cert.status,
         blockchainHash: cert.blockchainHash,
+        transactionHash: cert.transactionHash,
+        blockNumber: cert.blockNumber,
         ipfsCid: cert.ipfsCid,
         certificateNumber: cert.certificateNumber,
         institutionName: cert.institutionName,

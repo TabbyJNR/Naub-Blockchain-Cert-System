@@ -63,6 +63,7 @@ export default function IssueCertificatePage() {
     classOfDegree: "",
     dateOfAward: "",
     certificateNumber: "",
+    studentEmail: "",
   });
 
   const requiredFields = [
@@ -320,6 +321,19 @@ export default function IssueCertificatePage() {
                 <div className="space-y-2">
                   <Label htmlFor="certificateNumber">Certificate Number *</Label>
                   <Input id="certificateNumber" placeholder="NAUB/CERT/2026/0001" value={formData.certificateNumber} onChange={(e) => handleChange("certificateNumber", e.target.value)} required />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="studentEmail">
+                    Student Email Address
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">(optional — certificate details will be sent here)</span>
+                  </Label>
+                  <Input
+                    id="studentEmail"
+                    type="email"
+                    placeholder="student@example.com"
+                    value={formData.studentEmail}
+                    onChange={(e) => handleChange("studentEmail", e.target.value)}
+                  />
                 </div>
               </section>
 

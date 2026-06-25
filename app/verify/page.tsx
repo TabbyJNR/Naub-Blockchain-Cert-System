@@ -217,22 +217,26 @@ export default function VerifyPage() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Issuance Transaction</p>
-                      <div className="flex items-center gap-2">
-                        <div className="bg-muted p-3 rounded font-mono text-xs break-all flex-1">
-                          {blockchainInfo?.txHash}
-                        </div>
-                        <a
-                          href={`https://sepolia.etherscan.io/tx/${blockchainInfo?.txHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Button variant="outline" size="icon" title="View on Etherscan">
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        </a>
+                      <div className="bg-muted p-3 rounded font-mono text-xs break-all">
+                        {blockchainInfo?.txHash}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">Block: {blockchainInfo?.blockNumber}</p>
                     </div>
+
+                    {/* Prominent Etherscan button */}
+                    {blockchainInfo?.txHash && (
+                      <a
+                        href={`https://sepolia.etherscan.io/tx/${blockchainInfo.txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        <Button className="w-full gap-2" variant="outline">
+                          <ExternalLink className="h-4 w-4" />
+                          View this transaction on Etherscan (Ethereum Sepolia)
+                        </Button>
+                      </a>
+                    )}
                     {certificate.ipfsCid && !certificate.ipfsCid.startsWith("ipfs://demo-") && (
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Certificate Document (IPFS)</p>

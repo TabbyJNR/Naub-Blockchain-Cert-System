@@ -38,6 +38,9 @@ export default function CertificateDetailPage() {
   const [revokeStatusMessage, setRevokeStatusMessage] = useState<string | null>(null);
   const [showRevokeForm, setShowRevokeForm] = useState(false);
   const [revocationReason, setRevocationReason] = useState("");
+  const [showErasureForm, setShowErasureForm] = useState(false);
+  const [isErasing, setIsErasing] = useState(false);
+  const [erasureMessage, setErasureMessage] = useState("");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -168,6 +171,34 @@ export default function CertificateDetailPage() {
       link.download = `${certificate?.id}-qr-code.png`;
       link.href = url;
       link.click();
+    }
+  };
+
+  const handleErasure = async () => {
+    if (!certificate) return;
+    setIsErasing(true);
+    setErasureMessage("");
+    try {
+      const response = await fetch("/api/certificates/erasure", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matriculationNumber: certificate.matriculationNumber,
+          dateOfBirth: certificate.dateOfBirth,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setErasureMessage(
+          `✓ ${data.message || "Personal data erased successfully. The on-chain hash record remains."}`
+        );
+      } else {
+        setErasureMessage(data.error || "Erasure failed. Please try again.");
+      }
+    } catch {
+      setErasureMessage("An error occurred during erasure. Please try again.");
+    } finally {
+      setIsErasing(false);
     }
   };
 
@@ -374,13 +405,24 @@ export default function CertificateDetailPage() {
           </Card>
         </div>
 
-        {/* ── 5. Actions (Revoke) ── */}
+        {/* ── 5. Actions (Revoke + NDPR Erasure) ── */}
         <div className="space-y-4">
-          {certificate.status === "valid" && !showRevokeForm && (
-            <Button variant="destructive" onClick={() => setShowRevokeForm(true)}>
-              Revoke Certificate
-            </Button>
-          )}
+          <div className="flex flex-wrap gap-3">
+            {certificate.status === "valid" && !showRevokeForm && !showErasureForm && (
+              <Button variant="destructive" onClick={() => setShowRevokeForm(true)}>
+                Revoke Certificate
+              </Button>
+            )}
+            {!showErasureForm && !showRevokeForm && (
+              <Button
+                variant="outline"
+                className="border-orange-300 text-orange-700 hover:bg-orange-50 bg-transparent"
+                onClick={() => setShowErasureForm(true)}
+              >
+                Erase Personal Data (NDPR FR-16)
+              </Button>
+            )}
+          </div>
 
           {showRevokeForm && (
             <Card className="border-red-200">
@@ -411,6 +453,49 @@ export default function CertificateDetailPage() {
                     variant="outline"
                     onClick={() => { setShowRevokeForm(false); setRevocationReason(""); }}
                     disabled={isRevoking}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {showErasureForm && (
+            <Card className="border-orange-200">
+              <CardHeader>
+                <CardTitle className="text-orange-700">Erase Personal Data (NDPR Article 3.1(6))</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  This permanently deletes all personal data (name, date of birth,
+                  matriculation number) from the off-chain database. The on-chain
+                  hash record remains as an anonymous value — it cannot be erased
+                  or modified.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-800">
+                  <strong>This action is irreversible.</strong> Once personal data is
+                  erased, it cannot be recovered. The certificate will no longer be
+                  retrievable via the Holder Portal.
+                </div>
+                {erasureMessage && (
+                  <div className={`rounded-lg p-3 text-sm ${erasureMessage.startsWith("✓") ? "bg-green-50 text-green-800 border border-green-200" : "bg-red-50 text-red-800 border border-red-200"}`}>
+                    {erasureMessage}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="border-orange-400 text-orange-700 hover:bg-orange-100 bg-transparent"
+                    onClick={handleErasure}
+                    disabled={isErasing}
+                  >
+                    {isErasing ? "Erasing..." : "Confirm Erasure"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => { setShowErasureForm(false); setErasureMessage(""); }}
+                    disabled={isErasing}
                   >
                     Cancel
                   </Button>

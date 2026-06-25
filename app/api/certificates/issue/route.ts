@@ -7,6 +7,7 @@ import crypto from "crypto";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { generateCertificatePdf } from "@/lib/certificate-pdf";
 import { uploadToIpfs } from "@/lib/ipfs";
+import { sendCertificateIssuanceEmail } from "@/lib/email";
 import {
   isNonEmptyString,
   isValidDateString,
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
       classOfDegree,
       dateOfAward,
       certificateNumber,
+      studentEmail,
       ipfsCid,
       institutionName = "Nigerian Army University Biu",
       certificateType = "DEGREE",
@@ -234,6 +236,17 @@ export async function POST(request: Request) {
     };
 
     await database.createCertificate(certificate);
+
+    // Send certificate notification email to the student (non-blocking —
+    // a send failure must never roll back an already-confirmed issuance)
+    if (studentEmail && typeof studentEmail === "string" && studentEmail.includes("@")) {
+      sendCertificateIssuanceEmail({
+        studentEmail: studentEmail.trim().toLowerCase(),
+        certificate,
+      }).catch((emailError) => {
+        console.error("[API] Certificate email notification failed:", emailError);
+      });
+    }
 
     return NextResponse.json({ success: true, certificate });
   } catch (error) {
