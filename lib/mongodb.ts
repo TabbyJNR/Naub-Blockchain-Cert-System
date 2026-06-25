@@ -21,7 +21,7 @@ declare global {
 export async function connectToDatabase(): Promise<typeof mongoose | null> {
   if (!MONGODB_URI) {
     console.warn(
-      "[MongoDB] MONGODB_URI is not set — the system will run without persistent storage."
+      "[MongoDB] MONGODB_URI is not set - the system will run without persistent storage."
     );
     return null;
   }

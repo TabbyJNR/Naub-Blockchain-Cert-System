@@ -22,10 +22,26 @@ import {
   BarChart3,
   ArrowLeft,
   ChevronRight,
+  PauseCircle,
+  PlayCircle,
+  UserPlus,
+  UserMinus,
+  KeyRound,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  getRegistryContractAddress,
+  grantCertificateRoleOnChain,
+  revokeCertificateRoleOnChain,
+  pauseContractOnChain,
+  unpauseContractOnChain,
+  isContractPaused,
+} from "@/lib/contract-client";
 import { Badge } from "@/components/ui/badge";
 import type { Certificate } from "@/lib/database";
 import { formatDate, getCertificateStatusColor } from "@/lib/certificate-utils";
+import { NaubBrand } from "@/components/naub-brand";
 
 interface Analytics {
   totalCertificates: number;
@@ -39,6 +55,225 @@ interface Analytics {
     certificateId: string;
     timestamp: number;
   }>;
+}
+
+/**
+ * AdminControlPanel — Role Management and System Pause.
+ * Only shown to wallets with SUPERADMIN_ROLE (stored as "superadmin"
+ * in sessionStorage after login). Registry Admins ("admin" role) see
+ * this section as read-only, showing current status only.
+ */
+function AdminControlPanel() {
+  const role =
+    typeof window !== "undefined" ? sessionStorage.getItem("naub_role") : null;
+  const isSuperAdmin = role === "superadmin";
+
+  const [contractAddress, setContractAddress] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState<boolean | null>(null);
+  const [pauseLoading, setPauseLoading] = useState(false);
+  const [newAdminWallet, setNewAdminWallet] = useState("");
+  const [revokeAdminWallet, setRevokeAdminWallet] = useState("");
+  const [roleLoading, setRoleLoading] = useState(false);
+  const [roleMessage, setRoleMessage] = useState("");
+  const [pauseMessage, setPauseMessage] = useState("");
+
+  useEffect(() => {
+    getRegistryContractAddress().then((addr) => {
+      setContractAddress(addr);
+      if (addr) isContractPaused(addr).then(setIsPaused).catch(() => setIsPaused(false));
+    });
+  }, []);
+
+  const handlePauseToggle = async () => {
+    if (!contractAddress) return;
+    setPauseLoading(true);
+    setPauseMessage("");
+    try {
+      if (isPaused) {
+        await unpauseContractOnChain(contractAddress);
+        setIsPaused(false);
+        setPauseMessage("System successfully unpaused. Certificate issuance and revocation are now enabled.");
+      } else {
+        await pauseContractOnChain(contractAddress);
+        setIsPaused(true);
+        setPauseMessage("System successfully paused. Certificate issuance and revocation are now blocked on-chain.");
+      }
+    } catch (err: any) {
+      if (err?.message?.includes("rejected") || err?.code === 4001) {
+        setPauseMessage("Transaction rejected in MetaMask. No change was made.");
+      } else {
+        setPauseMessage(`Failed: ${err?.message || "Unknown error"}`);
+      }
+    } finally {
+      setPauseLoading(false);
+    }
+  };
+
+  const handleGrantRole = async () => {
+    if (!contractAddress || !newAdminWallet.trim()) return;
+    setRoleLoading(true);
+    setRoleMessage("");
+    try {
+      await grantCertificateRoleOnChain(contractAddress, newAdminWallet.trim());
+      setRoleMessage(`CERTIFICATE_ROLE granted to ${newAdminWallet.trim()}. They can now issue and revoke certificates.`);
+      setNewAdminWallet("");
+    } catch (err: any) {
+      if (err?.message?.includes("rejected") || err?.code === 4001) {
+        setRoleMessage("Transaction rejected in MetaMask.");
+      } else {
+        setRoleMessage(`Failed: ${err?.message || "Unknown error"}`);
+      }
+    } finally {
+      setRoleLoading(false);
+    }
+  };
+
+  const handleRevokeRole = async () => {
+    if (!contractAddress || !revokeAdminWallet.trim()) return;
+    setRoleLoading(true);
+    setRoleMessage("");
+    try {
+      await revokeCertificateRoleOnChain(contractAddress, revokeAdminWallet.trim());
+      setRoleMessage(`CERTIFICATE_ROLE revoked from ${revokeAdminWallet.trim()}. They can no longer issue or revoke certificates.`);
+      setRevokeAdminWallet("");
+    } catch (err: any) {
+      if (err?.message?.includes("rejected") || err?.code === 4001) {
+        setRoleMessage("Transaction rejected in MetaMask.");
+      } else {
+        setRoleMessage(`Failed: ${err?.message || "Unknown error"}`);
+      }
+    } finally {
+      setRoleLoading(false);
+    }
+  };
+
+  if (!isSuperAdmin) return null;
+
+  return (
+    <div className="mt-6 grid gap-6 md:grid-cols-2">
+
+      {/* System Pause */}
+      <Card className={isPaused ? "border-red-300" : "border-green-300"}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            {isPaused
+              ? <PauseCircle className="h-5 w-5 text-red-600" />
+              : <PlayCircle className="h-5 w-5 text-green-600" />}
+            System Operational Status
+          </CardTitle>
+          <CardDescription>
+            Pause or resume certificate issuance and revocation on the
+            CertificateRegistry smart contract. Only SUPERADMIN_ROLE can perform
+            this action. Each toggle requires a MetaMask transaction.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className={`rounded-lg p-3 text-sm font-semibold ${
+            isPaused === null
+              ? "bg-muted text-muted-foreground"
+              : isPaused
+                ? "bg-red-50 text-red-700 border border-red-200"
+                : "bg-green-50 text-green-700 border border-green-200"
+          }`}>
+            {isPaused === null
+              ? "Checking contract status..."
+              : isPaused
+                ? "PAUSED - Issuance and revocation are currently blocked on-chain"
+                : "OPERATIONAL - Issuance and revocation are enabled"}
+          </div>
+          {pauseMessage && (
+            <p className="text-sm text-muted-foreground">{pauseMessage}</p>
+          )}
+          <Button
+            variant={isPaused ? "default" : "destructive"}
+            onClick={handlePauseToggle}
+            disabled={pauseLoading || isPaused === null || !contractAddress}
+            className="w-full gap-2"
+          >
+            {pauseLoading
+              ? "Waiting for MetaMask..."
+              : isPaused
+                ? <><PlayCircle className="h-4 w-4" /> Unpause System</>
+                : <><PauseCircle className="h-4 w-4" /> Pause System</>}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Role Management */}
+      <Card className="border-primary/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <KeyRound className="h-5 w-5 text-primary" />
+            Registry Admin Role Management
+          </CardTitle>
+          <CardDescription>
+            Grant or revoke CERTIFICATE_ROLE on the CertificateRegistry contract.
+            Only SUPERADMIN_ROLE can manage roles. Each action requires a
+            MetaMask transaction and costs a small amount of Sepolia gas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Grant */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Grant CERTIFICATE_ROLE</p>
+            <div className="flex gap-2">
+              <Input
+                placeholder="0x... wallet address"
+                value={newAdminWallet}
+                onChange={(e) => setNewAdminWallet(e.target.value)}
+                className="font-mono text-xs"
+              />
+              <Button
+                size="sm"
+                onClick={handleGrantRole}
+                disabled={roleLoading || !newAdminWallet.trim() || !contractAddress}
+                className="gap-1 whitespace-nowrap"
+              >
+                <UserPlus className="h-4 w-4" />
+                Grant
+              </Button>
+            </div>
+          </div>
+
+          {/* Revoke */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Revoke CERTIFICATE_ROLE</p>
+            <div className="flex gap-2">
+              <Input
+                placeholder="0x... wallet address"
+                value={revokeAdminWallet}
+                onChange={(e) => setRevokeAdminWallet(e.target.value)}
+                className="font-mono text-xs"
+              />
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleRevokeRole}
+                disabled={roleLoading || !revokeAdminWallet.trim() || !contractAddress}
+                className="gap-1 whitespace-nowrap"
+              >
+                <UserMinus className="h-4 w-4" />
+                Revoke
+              </Button>
+            </div>
+          </div>
+
+          {roleMessage && (
+            <p className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+              {roleMessage}
+            </p>
+          )}
+
+          {!contractAddress && (
+            <p className="text-xs text-muted-foreground">
+              Contract address not configured. Role management requires
+              CERTIFICATE_REGISTRY_ADDRESS to be set in Vercel environment variables.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 export default function AdminDashboard() {
@@ -67,7 +302,7 @@ export default function AdminDashboard() {
       }
 
       // System is "Operational" only if the analytics endpoint actually
-      // responded successfully — this reflects real backend/database
+      // responded successfully - this reflects real backend/database
       // health rather than a hardcoded label.
       setSystemStatus(analyticsResponse.ok ? "Operational" : "Degraded");
     } catch (error) {
@@ -102,21 +337,9 @@ export default function AdminDashboard() {
       <header className="border-b bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/admin">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Login
-              </Button>
+            <Link href="/">
+              <NaubBrand subtitle="Registry Admin Dashboard" />
             </Link>
-            <div className="flex items-center gap-3">
-              <Shield className="h-8 w-8 text-primary" />
-              <div>
-                <h1 className="font-bold text-xl">NAUB Admin Dashboard</h1>
-                <p className="text-xs text-muted-foreground">
-                  Certificate Management System
-                </p>
-              </div>
-            </div>
           </div>
           <Button
             variant="outline"
@@ -293,6 +516,10 @@ export default function AdminDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Role Management + System Pause — SuperAdmin only */}
+        <AdminControlPanel />
+
       </div>
     </div>
   );

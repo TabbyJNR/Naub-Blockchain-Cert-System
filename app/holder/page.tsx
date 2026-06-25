@@ -118,7 +118,7 @@ export default function HolderPortalPage() {
           <CardHeader>
             <CardTitle>Find my certificates</CardTitle>
             <CardDescription>
-              Your name and date of birth are hashed in your browser — they are never
+              Your name and date of birth are hashed in your browser - they are never
               sent to the server in plain text.
             </CardDescription>
           </CardHeader>
@@ -191,7 +191,7 @@ export default function HolderPortalPage() {
                     <CardTitle className="text-xl">{certificate.studentName}</CardTitle>
                     <CardDescription className="mt-1">
                       {certificate.programmeOfStudy}
-                      {certificate.classOfDegree ? ` — ${certificate.classOfDegree}` : ""}
+                      {certificate.classOfDegree ? ` - ${certificate.classOfDegree}` : ""}
                     </CardDescription>
                   </div>
                   <Badge className={getCertificateStatusColor(certificate.status)}>

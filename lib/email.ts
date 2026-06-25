@@ -12,7 +12,7 @@
  * - Instructions on how to use each item
  *
  * Falls back gracefully (logs, does not throw) if RESEND_API_KEY is not
- * configured or the send fails — a notification failure must never block
+ * configured or the send fails - a notification failure must never block
  * or roll back a certificate that has already been anchored on-chain.
  */
 
@@ -34,7 +34,7 @@ export async function sendCertificateIssuanceEmail(
   options: SendCertificateEmailOptions,
 ): Promise<void> {
   if (!RESEND_API_KEY) {
-    console.warn("[Email] RESEND_API_KEY not set — skipping certificate notification email");
+    console.warn("[Email] RESEND_API_KEY not set - skipping certificate notification email");
     return;
   }
 
@@ -78,7 +78,7 @@ export async function sendCertificateIssuanceEmail(
                 Dear <strong>${certificate.studentName}</strong>,
               </p>
               <p style="margin:0 0 24px;font-size:14px;color:#444;line-height:1.7;">
-                Congratulations — your degree certificate has been officially issued and
+                Congratulations - your degree certificate has been officially issued and
                 permanently anchored on the Ethereum Sepolia blockchain by the NAUB Registry.
                 The details of your certificate are recorded below.
               </p>
@@ -88,7 +88,7 @@ export async function sendCertificateIssuanceEmail(
                 <tr>
                   <td style="background:#7a1f1f;padding:12px 16px;">
                     <p style="margin:0;font-size:11px;color:#ffffff;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">
-                      Statement of Result — ${certificate.certificateNumber}
+                      Statement of Result - ${certificate.certificateNumber}
                     </p>
                   </td>
                 </tr>
@@ -125,8 +125,8 @@ export async function sendCertificateIssuanceEmail(
                 How to verify your certificate
               </p>
               <p style="margin:0 0 16px;font-size:13px;color:#444;line-height:1.7;">
-                Your certificate's authenticity can be verified by anyone — employers,
-                NYSC, other institutions — using any of the methods below. No login or
+                Your certificate's authenticity can be verified by anyone - employers,
+                NYSC, other institutions - using any of the methods below. No login or
                 payment is required.
               </p>
 
@@ -172,7 +172,7 @@ export async function sendCertificateIssuanceEmail(
               <p style="margin:0 0 20px;font-size:12px;color:#666;line-height:1.6;">
                 Your certificate document is permanently stored on IPFS, a decentralised
                 content-addressed storage network. The link above will always point to
-                the same document — it cannot be altered or removed.
+                the same document - it cannot be altered or removed.
               </p>`
                   : ""
               }
@@ -213,7 +213,7 @@ export async function sendCertificateIssuanceEmail(
       body: JSON.stringify({
         from: "NAUB Certificate System <onboarding@resend.dev>",
         to: [studentEmail],
-        subject: `Your NAUB Degree Certificate — ${certificate.certificateNumber}`,
+        subject: `Your NAUB Degree Certificate - ${certificate.certificateNumber}`,
         html,
       }),
     });

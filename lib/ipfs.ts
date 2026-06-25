@@ -3,12 +3,12 @@
  *
  * Certificates are uploaded as real PDF files and pinned to IPFS through
  * Pinata's pinning service, giving every issued certificate a genuine,
- * permanent, content-addressed document — replacing the placeholder
+ * permanent, content-addressed document - replacing the placeholder
  * `ipfs://demo-<id>` CIDs used before this was implemented.
  *
  * If PINATA_JWT is not configured, uploads are skipped and the system
  * falls back to a placeholder CID so issuance is never blocked by a
- * missing or misconfigured IPFS integration — this mirrors the same
+ * missing or misconfigured IPFS integration - this mirrors the same
  * "fail open, log clearly" pattern used elsewhere (rate limiting,
  * nonce storage) for non-critical-path dependencies.
  */
@@ -25,7 +25,7 @@ export interface IpfsUploadResult {
 /**
  * Uploads a PDF (or any file) buffer to IPFS via Pinata and returns the
  * resulting CID. Returns null if Pinata is not configured or the upload
- * fails — callers should fall back to a placeholder CID in that case
+ * fails - callers should fall back to a placeholder CID in that case
  * rather than blocking certificate issuance entirely.
  */
 export async function uploadToIpfs(
@@ -34,7 +34,7 @@ export async function uploadToIpfs(
   mimeType = "application/pdf",
 ): Promise<IpfsUploadResult | null> {
   if (!PINATA_JWT) {
-    console.warn("[IPFS] PINATA_JWT is not set — skipping upload, using placeholder CID");
+    console.warn("[IPFS] PINATA_JWT is not set - skipping upload, using placeholder CID");
     return null;
   }
 

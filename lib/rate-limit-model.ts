@@ -3,7 +3,7 @@
  *
  * A fixed-window counter per (key, route) pair. Stored in MongoDB rather
  * than in-memory because Vercel serverless functions do not reliably
- * share memory between invocations/instances — an in-memory counter
+ * share memory between invocations/instances - an in-memory counter
  * would silently reset on every cold start and provide no real
  * protection.
  */

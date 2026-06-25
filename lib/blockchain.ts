@@ -1,16 +1,16 @@
 /**
- * NAUB Blockchain Certificate System — Blockchain service
+ * NAUB Blockchain Certificate System - Blockchain service
  *
  * Behaviour depends on how the environment is configured:
  *
- *  Mode A — Real contract (production / evaluation):
+ *  Mode A - Real contract (production / evaluation):
  *    Set CERTIFICATE_REGISTRY_ADDRESS (the deployed CertificateRegistry on
  *    Ethereum Sepolia) and TEST_WALLET_PRIVATE_KEY (a funded Sepolia wallet
  *    that holds CERTIFICATE_ROLE). The service calls issueCertificate() and
  *    revokeCertificate() as real on-chain transactions and verifyCertificate()
  *    as a free read-only view call.
  *
- *  Mode B — Simulation (development / Vercel preview):
+ *  Mode B - Simulation (development / Vercel preview):
  *    If CERTIFICATE_REGISTRY_ADDRESS or TEST_WALLET_PRIVATE_KEY are missing,
  *    the service simulates blockchain behaviour locally. The Next.js app and
  *    all four portals work identically in both modes.
@@ -123,7 +123,7 @@ export class BlockchainService {
   }
 
   /**
-   * Intentionally a no-op. The blockchain cache starts empty — every
+   * Intentionally a no-op. The blockchain cache starts empty - every
    * record must come from a real on-chain transaction (or a real
    * simulated one in development), never a hardcoded sample.
    */

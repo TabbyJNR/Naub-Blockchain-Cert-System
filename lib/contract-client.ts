@@ -6,12 +6,12 @@
  *
  * Used by the Issue and Revoke flows so that every state-changing
  * blockchain action (issueCertificate, revokeCertificate) is signed
- * and paid for by the Registry Admin's own wallet — not a shared
+ * and paid for by the Registry Admin's own wallet - not a shared
  * server-side key. This matches the institutional accountability
  * model described in Chapter 3 (each transaction is attributable to
  * the wallet that submitted it).
  *
- * Read-only verification (verifyCertificate) does NOT need this —
+ * Read-only verification (verifyCertificate) does NOT need this -
  * it stays on the backend as a free, gas-less RPC call so the public
  * verification page works without requiring a wallet at all.
  */
@@ -109,4 +109,106 @@ export async function revokeCertificateOnChain(
     transactionHash: tx.hash,
     blockNumber: Number(receipt.blockNumber),
   };
+}
+
+// Extended ABI for role management and pause/unpause operations
+const REGISTRY_ADMIN_ABI = [
+  "function grantCertificateRole(address account) external",
+  "function revokeCertificateRole(address account) external",
+  "function pause() external",
+  "function unpause() external",
+  "function paused() external view returns (bool)",
+  "function hasRole(bytes32 role, address account) external view returns (bool)",
+  "function CERTIFICATE_ROLE() external view returns (bytes32)",
+  "function SUPERADMIN_ROLE() external view returns (bytes32)",
+];
+
+/**
+ * Grants CERTIFICATE_ROLE to a new Registry Admin wallet.
+ * Only callable by a wallet holding SUPERADMIN_ROLE.
+ */
+export async function grantCertificateRoleOnChain(
+  contractAddress: string,
+  walletAddress: string,
+): Promise<OnChainTxResult> {
+  if (typeof window === "undefined" || !window.ethereum) {
+    throw new Error("MetaMask is not available.");
+  }
+  const { ethers } = await import("ethers");
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  const contract = new ethers.Contract(contractAddress, REGISTRY_ADMIN_ABI, signer);
+  const tx = await contract.grantCertificateRole(walletAddress);
+  const receipt = await tx.wait();
+  return { transactionHash: tx.hash, blockNumber: Number(receipt.blockNumber) };
+}
+
+/**
+ * Revokes CERTIFICATE_ROLE from a Registry Admin wallet.
+ * Only callable by a wallet holding SUPERADMIN_ROLE.
+ */
+export async function revokeCertificateRoleOnChain(
+  contractAddress: string,
+  walletAddress: string,
+): Promise<OnChainTxResult> {
+  if (typeof window === "undefined" || !window.ethereum) {
+    throw new Error("MetaMask is not available.");
+  }
+  const { ethers } = await import("ethers");
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  const contract = new ethers.Contract(contractAddress, REGISTRY_ADMIN_ABI, signer);
+  const tx = await contract.revokeCertificateRole(walletAddress);
+  const receipt = await tx.wait();
+  return { transactionHash: tx.hash, blockNumber: Number(receipt.blockNumber) };
+}
+
+/**
+ * Pauses the CertificateRegistry contract.
+ * Only callable by a wallet holding SUPERADMIN_ROLE.
+ */
+export async function pauseContractOnChain(
+  contractAddress: string,
+): Promise<OnChainTxResult> {
+  if (typeof window === "undefined" || !window.ethereum) {
+    throw new Error("MetaMask is not available.");
+  }
+  const { ethers } = await import("ethers");
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  const contract = new ethers.Contract(contractAddress, REGISTRY_ADMIN_ABI, signer);
+  const tx = await contract.pause();
+  const receipt = await tx.wait();
+  return { transactionHash: tx.hash, blockNumber: Number(receipt.blockNumber) };
+}
+
+/**
+ * Unpauses the CertificateRegistry contract.
+ * Only callable by a wallet holding SUPERADMIN_ROLE.
+ */
+export async function unpauseContractOnChain(
+  contractAddress: string,
+): Promise<OnChainTxResult> {
+  if (typeof window === "undefined" || !window.ethereum) {
+    throw new Error("MetaMask is not available.");
+  }
+  const { ethers } = await import("ethers");
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  const contract = new ethers.Contract(contractAddress, REGISTRY_ADMIN_ABI, signer);
+  const tx = await contract.unpause();
+  const receipt = await tx.wait();
+  return { transactionHash: tx.hash, blockNumber: Number(receipt.blockNumber) };
+}
+
+/**
+ * Checks whether the contract is currently paused.
+ * Free view call - no gas required.
+ */
+export async function isContractPaused(contractAddress: string): Promise<boolean> {
+  if (typeof window === "undefined" || !window.ethereum) return false;
+  const { ethers } = await import("ethers");
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const contract = new ethers.Contract(contractAddress, REGISTRY_ADMIN_ABI, provider);
+  return contract.paused();
 }

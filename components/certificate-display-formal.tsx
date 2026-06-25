@@ -14,7 +14,7 @@ interface CertificateDisplayProps {
  * Renders the issued certificate in the same visual format as the
  * official NAUB "Statement of Result" document.
  *
- * FIXED LETTERHEAD (never changes per certificate — edit the constants
+ * FIXED LETTERHEAD (never changes per certificate - edit the constants
  * below if the institution's signatories change):
  *   - University name, address, seal/crest
  *   - Vice Chancellor's name and credentials (header, left)
@@ -32,18 +32,18 @@ interface CertificateDisplayProps {
  * Every other field captured at issuance (matriculation number, date of
  * birth, the viceChancellor field itself, holder identity hash, etc.)
  * remains fully stored in the database and anchored in the on-chain
- * hash — it is simply not printed on the visible document, matching
+ * hash - it is simply not printed on the visible document, matching
  * the real paper certificate.
  *
  * The seal and stamp are placeholders until the real NAUB crest image
- * is supplied — search for "TODO: replace with real crest image" below.
+ * is supplied - search for "TODO: replace with real crest image" below.
  */
 
 // ---------------------------------------------------------------------------
-// Fixed letterhead constants — edit here if the institution's signatories
+// Fixed letterhead constants - edit here if the institution's signatories
 // or printed details change. These are intentionally NOT pulled from the
 // certificate record. (NAUB_VICE_CHANCELLOR_NAME is imported from
-// certificate-utils since it also drives the on-chain hash computation —
+// certificate-utils since it also drives the on-chain hash computation -
 // it must stay identical in both places.)
 // ---------------------------------------------------------------------------
 const NAUB_VICE_CHANCELLOR_CREDENTIALS = "BSc, Msc (UNIMAID), Ph.D (ABU), mNSBMB, mNBS, GCNNS, FCAL";
@@ -62,7 +62,7 @@ export function CertificateDisplayFormal({ certificate }: CertificateDisplayProp
    * everything on the page is hidden except the certificate, which is
    * repositioned to fill the printable A4 page (see the @media print
    * rules in CERTIFICATE_DISPLAY_STYLES below). This prints the
-   * certificate exactly as it already renders on screen — same fonts,
+   * certificate exactly as it already renders on screen - same fonts,
    * same already-loaded images, no separate window or re-injected HTML
    * that can fall out of sync with the live layout.
    */
@@ -83,7 +83,7 @@ export function CertificateDisplayFormal({ certificate }: CertificateDisplayProp
         <div ref={certificateRef} className="naub-certificate naub-print-area">
           <div className="naub-watermark" aria-hidden="true" />
 
-          {/* ===== FIXED LETTERHEAD — header ===== */}
+          {/* ===== FIXED LETTERHEAD - header ===== */}
           <header className="naub-header">
             <h1>NIGERIAN ARMY UNIVERSITY BIU</h1>
             <p className="naub-address">P.M.B. 1500 BIU, BORNO STATE, NIGERIA</p>
@@ -112,10 +112,10 @@ export function CertificateDisplayFormal({ certificate }: CertificateDisplayProp
             </div>
           </div>
 
-          {/* ===== LIVE — Ref. No (= certificateNumber) ===== */}
+          {/* ===== LIVE - Ref. No (= certificateNumber) ===== */}
           <p className="naub-ref">Ref. No: {certificate.certificateNumber}</p>
 
-          {/* ===== FIXED LETTERHEAD — title ===== */}
+          {/* ===== FIXED LETTERHEAD - title ===== */}
           <div className="naub-title-block">
             <h2>STATEMENT OF RESULT</h2>
             <div className="naub-flourish" aria-hidden="true">
@@ -127,7 +127,7 @@ export function CertificateDisplayFormal({ certificate }: CertificateDisplayProp
             </div>
           </div>
 
-          {/* ===== LIVE — student result fields ===== */}
+          {/* ===== LIVE - student result fields ===== */}
           <div className="naub-body">
             <p className="naub-intro">This is to certify that</p>
 
@@ -151,7 +151,7 @@ export function CertificateDisplayFormal({ certificate }: CertificateDisplayProp
             </p>
           </div>
 
-          {/* ===== FIXED LETTERHEAD — footer signature and stamp ===== */}
+          {/* ===== FIXED LETTERHEAD - footer signature and stamp ===== */}
           <footer className="naub-footer">
             <div className="naub-signature">
             {/* Script-font signature rendering of the Academic Secretary's name */}
@@ -161,7 +161,7 @@ export function CertificateDisplayFormal({ certificate }: CertificateDisplayProp
               <p className="naub-signature-subtitle">for Registrar</p>
             </div>
 
-            {/* Real NAUB crest used as the official stamp — rotated like an ink stamp */}
+            {/* Real NAUB crest used as the official stamp - rotated like an ink stamp */}
             <div className="naub-stamp">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img

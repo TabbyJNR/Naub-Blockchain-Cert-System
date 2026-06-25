@@ -45,7 +45,7 @@ export default function HomePage() {
 
       <main>
 
-        {/* Hero — reduced size, tight centered layout */}
+        {/* Hero - reduced size, tight centered layout */}
         <section className="container mx-auto px-4 py-10 lg:py-16">
           <div className="mx-auto max-w-2xl space-y-5 text-center">
             <h2 className="text-balance text-3xl font-black leading-tight tracking-tight text-foreground md:text-4xl">
@@ -88,7 +88,7 @@ export default function HomePage() {
               <CardDescription>
                 Captures all eight required fields: student name, matriculation number,
                 date of birth, programme of study, class of degree, date of award,
-                certificate number, and Vice Chancellor — matching the official NAUB
+                certificate number, and Vice Chancellor - matching the official NAUB
                 Statement of Result format.
               </CardDescription>
             </CardHeader>
@@ -110,7 +110,7 @@ export default function HomePage() {
               <CardTitle>Independent verification</CardTitle>
               <CardDescription>
                 Employers and institutions verify without accounts, payment, or registry
-                letters — results come directly from the Ethereum Sepolia blockchain via
+                letters - results come directly from the Ethereum Sepolia blockchain via
                 a QR-linked verification URL or a direct hash / certificate ID lookup.
               </CardDescription>
             </CardHeader>
@@ -142,7 +142,7 @@ export default function HomePage() {
                 <div className="text-2xl font-black">IPFS</div>
                 <p className="mt-1 text-sm text-secondary-foreground/75">
                   Certificate PDFs are generated and pinned to IPFS via Pinata at
-                  issuance — the CID is anchored on-chain for permanent document proof
+                  issuance - the CID is anchored on-chain for permanent document proof
                 </p>
               </div>
               <div>
@@ -163,7 +163,7 @@ export default function HomePage() {
       <footer className="border-t mt-10">
         <div className="container mx-auto px-4 py-8 text-center text-sm text-muted-foreground">
           <p>© 2026 Nigerian Army University Biu (NAUB)</p>
-          <p className="mt-1">Blockchain Certificate System — Securing academic credential trust.</p>
+          <p className="mt-1">Blockchain Certificate System - Securing academic credential trust.</p>
         </div>
       </footer>
 

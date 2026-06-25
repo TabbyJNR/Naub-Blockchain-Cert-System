@@ -7,7 +7,7 @@ import { isNonEmptyString, isValidDateString, sanitizeString } from "@/lib/valid
 /**
  * Generates the certificate PDF and uploads it to IPFS BEFORE the
  * on-chain transaction is requested, so the IPFS CID can be included in
- * the issueCertificate() call itself — keeping the on-chain record and
+ * the issueCertificate() call itself - keeping the on-chain record and
  * the actual pinned document consistent. (Generating the PDF only after
  * the transaction confirms, as a first pass of this feature did, would
  * mean the on-chain ipfsCid field never matches the real uploaded file.)
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       console.error("[Prepare IPFS API] PDF generation/upload failed:", genError);
     }
 
-    // Pinata not configured, or generation/upload failed — fall back to
+    // Pinata not configured, or generation/upload failed - fall back to
     // no CID rather than blocking issuance. The issue route applies its
     // own placeholder in this case.
     return NextResponse.json({ ipfsCid: null });

@@ -1,5 +1,5 @@
 /**
- * Off-chain data storage — MongoDB Atlas.
+ * Off-chain data storage - MongoDB Atlas.
  *
  * Implements the same method signatures the rest of the app already
  * depends on (createCertificate, getCertificate, getAllCertificates,
@@ -82,7 +82,7 @@ class FileStorage {
 
   /**
    * Intentionally a no-op. The system starts with zero certificates and
-   * zero verifications — every record shown in the admin dashboard must
+   * zero verifications - every record shown in the admin dashboard must
    * come from a real issuance, revocation, or verification event.
    */
   async initializeSampleData(): Promise<void> {

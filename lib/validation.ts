@@ -2,7 +2,7 @@
  * Shared input validation helpers for API routes.
  *
  * These exist because user-submitted data here doesn't just get stored
- * in a database — fields like the eight certificate fields get hashed
+ * in a database - fields like the eight certificate fields get hashed
  * client-side and that hash is permanently anchored on the Ethereum
  * Sepolia blockchain. There is no "undo" for bad data once it's
  * on-chain, so every field accepted by an API route that can lead to
@@ -51,7 +51,7 @@ export function isValidTxHash(value: unknown): value is string {
  * True if value is a non-negative integer (e.g. a block number).
  * Accepts either a clean JS number or a numeric string, since values
  * that cross a browser -> JSON -> server boundary can sometimes arrive
- * as one or the other depending on the provider/runtime — this field is
+ * as one or the other depending on the provider/runtime - this field is
  * on the critical path for recording a confirmed blockchain transaction,
  * so it is deliberately tolerant of both forms rather than rejecting a
  * genuinely valid block number over a representation difference.
@@ -73,7 +73,7 @@ export function isValidReason(value: unknown): value is string {
 /**
  * Strips a string down to a safe length and removes characters that have
  * no legitimate place in a name/identifier field (control characters).
- * Does not attempt to block HTML/script content specifically — the
+ * Does not attempt to block HTML/script content specifically - the
  * frontend uses React, which escapes rendered text by default, so this
  * is about data hygiene and length limits, not XSS-specific filtering.
  */

@@ -1,8 +1,8 @@
-// Database service — persists to MongoDB Atlas via lib/storage.ts
+// Database service - persists to MongoDB Atlas via lib/storage.ts
 
 export interface Certificate {
   id: string;
-  // Student identity fields (stored off-chain only — never written to blockchain)
+  // Student identity fields (stored off-chain only - never written to blockchain)
   studentName: string;
   matriculationNumber: string;
   dateOfBirth: string;
@@ -117,15 +117,15 @@ class DatabaseService {
   /**
    * Checks whether a matriculation number or certificate number is
    * already in use by any existing certificate record (valid or
-   * revoked). These are meant to be globally unique identifiers — a
+   * revoked). These are meant to be globally unique identifiers - a
    * student only has one matriculation number, and a Ref. No /
-   * certificate number should never be reused — so this check runs
+   * certificate number should never be reused - so this check runs
    * BEFORE the on-chain transaction is requested, preventing a
    * Registry Admin from spending real Sepolia gas only to have the
    * issuance rejected afterward.
    *
    * Note: this is a deliberate addition beyond the original Chapter 3
-   * design — the smart contract alone only rejects an exact duplicate
+   * design - the smart contract alone only rejects an exact duplicate
    * combined certificate hash, which would NOT catch two genuinely
    * different certificates that happen to reuse the same matriculation
    * number or certificate number. This off-chain uniqueness check

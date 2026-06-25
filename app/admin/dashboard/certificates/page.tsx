@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Shield,
   ArrowLeft,
   Plus,
   Search,
@@ -23,6 +22,7 @@ import {
 import { formatDate, getCertificateStatusColor } from "@/lib/certificate-utils";
 import type { Certificate } from "@/lib/database";
 import { useRouter } from "next/navigation";
+import { NaubBrand } from "@/components/naub-brand";
 
 export default function CertificatesPage() {
   const router = useRouter();
@@ -65,13 +65,7 @@ export default function CertificatesPage() {
                 Dashboard
               </Button>
             </Link>
-            <div className="flex items-center gap-3">
-              <Shield className="h-8 w-8 text-primary" />
-              <div>
-                <h1 className="font-bold text-xl">Certificate Management</h1>
-                <p className="text-xs text-muted-foreground">All Issued Certificates</p>
-              </div>
-            </div>
+            <NaubBrand subtitle="Certificate Management" />
           </div>
           <div className="flex items-center gap-2">
             <Link href="/admin/dashboard/issue">

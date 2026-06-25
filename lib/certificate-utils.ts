@@ -15,7 +15,7 @@ export function formatDate(date: string): string {
 
 /**
  * Formats a date the way it appears on the official NAUB certificate:
- * an ordinal day, full month name, full year — e.g. "15th December, 2025".
+ * an ordinal day, full month name, full year - e.g. "15th December, 2025".
  */
 export function formatOrdinalDate(date: string): string {
   const d = new Date(date);
@@ -71,8 +71,8 @@ export const degreeClasses = [
 /**
  * The Vice Chancellor's name is a fixed institutional letterhead detail,
  * not something entered per-certificate. It is defined ONCE here and
- * imported everywhere it's needed — the issue form's hash computation,
- * the issue API route, and the certificate display component — so the
+ * imported everywhere it's needed - the issue form's hash computation,
+ * the issue API route, and the certificate display component - so the
  * value used to compute the on-chain certificate hash can never silently
  * drift from the value shown on the printed certificate. A mismatch
  * between these would be a serious bug: the certificate hash anchored

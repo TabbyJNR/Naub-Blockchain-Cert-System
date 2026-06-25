@@ -1,8 +1,8 @@
 /**
  * Authentication: EIP-191 wallet signature + JWT
  *
- * Step 1: POST /api/admin/login?step=nonce — generate a nonce for the wallet to sign
- * Step 2: POST /api/admin/login            — verify the EIP-191 signature and issue a JWT
+ * Step 1: POST /api/admin/login?step=nonce - generate a nonce for the wallet to sign
+ * Step 2: POST /api/admin/login            - verify the EIP-191 signature and issue a JWT
  *
  * The JWT is derived from on-chain role membership, not a database password.
  * Compromising the off-chain data does not allow forging admin credentials.
@@ -34,7 +34,7 @@ const NONCE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const memoryNonceStore = new Map<string, { nonce: string; issuedAt: number }>();
 
 // Admin records handling permanent academic certificates should not stay
-// valid for long if a token is ever leaked — kept short deliberately.
+// valid for long if a token is ever leaked - kept short deliberately.
 const JWT_EXPIRY_SECONDS = 2 * 3600; // 2 hours
 
 const JWT_SECRET = process.env.JWT_SECRET || "naub-dev-secret-change-in-production";
@@ -99,8 +99,8 @@ async function deleteNonce(walletAddress: string): Promise<void> {
   }
 }
 
-// POST /api/admin/login?step=nonce  — returns a nonce for the wallet to sign
-// POST /api/admin/login             — verifies EIP-191 signature and issues JWT
+// POST /api/admin/login?step=nonce  - returns a nonce for the wallet to sign
+// POST /api/admin/login             - verifies EIP-191 signature and issues JWT
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
@@ -152,7 +152,7 @@ export async function POST(request: Request) {
     // Verify EIP-191 signature.
     // Must reconstruct the exact same message string the frontend signed
     // (ethers.verifyMessage handles the "\x19Ethereum Signed Message:\n"
-    // prefix and UTF-8 encoding internally — we just need the original
+    // prefix and UTF-8 encoding internally - we just need the original
     // plain-text message here, not the hex-encoded bytes sent to MetaMask).
     const signMessage = `NAUB Registry sign-in\nNonce: ${nonce}`;
     let recoveredAddress: string;

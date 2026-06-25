@@ -6,12 +6,12 @@
  * binaries, no headless browser). This deliberately avoids the earlier
  * html2canvas approach used for the in-browser Print/PDF feature, which
  * broke because it tried to parse the page's CSS (including oklch()
- * colour functions from the Tailwind/shadcn theme) — generating the PDF
+ * colour functions from the Tailwind/shadcn theme) - generating the PDF
  * by drawing directly onto a page sidesteps that entire class of problem.
  *
  * The resulting PDF is what gets uploaded to IPFS at issuance time (see
  * lib/ipfs.ts), giving every certificate a real, permanent, content-
- * addressed document — not just a placeholder CID.
+ * addressed document - not just a placeholder CID.
  */
 
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
@@ -74,7 +74,7 @@ export async function generateCertificatePdf(fields: CertificatePdfFields): Prom
 
   let y = page.getHeight() - 90;
 
-  // Crest image (embedded twice — header + footer stamp — matching the HTML display)
+  // Crest image (embedded twice - header + footer stamp - matching the HTML display)
   let crestImage = null;
   try {
     const crestPath = path.join(process.cwd(), "public", "images", "naub-seal.png");

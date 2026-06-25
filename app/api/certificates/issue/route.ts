@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       onChainBlockNumber,
     } = body;
 
-    // Vice Chancellor is a fixed institutional constant — not submitted
+    // Vice Chancellor is a fixed institutional constant - not submitted
     // from the form, so it is always consistent across all certificates.
     const viceChancellor = NAUB_VICE_CHANCELLOR_NAME;
 
@@ -186,7 +186,7 @@ export async function POST(request: Request) {
     // uploaded it to IPFS via /api/certificates/prepare-ipfs BEFORE
     // requesting the MetaMask transaction, so the same CID is included
     // in both the on-chain issueCertificate() call and this saved record
-    // — keeping them consistent. This is only a fallback for the rare
+    // - keeping them consistent. This is only a fallback for the rare
     // case (e.g. simulation mode / no contract configured) where that
     // didn't happen.
     let finalIpfsCid = ipfsCid;
@@ -237,7 +237,7 @@ export async function POST(request: Request) {
 
     await database.createCertificate(certificate);
 
-    // Send certificate notification email to the student (non-blocking —
+    // Send certificate notification email to the student (non-blocking -
     // a send failure must never roll back an already-confirmed issuance)
     if (studentEmail && typeof studentEmail === "string" && studentEmail.includes("@")) {
       sendCertificateIssuanceEmail({

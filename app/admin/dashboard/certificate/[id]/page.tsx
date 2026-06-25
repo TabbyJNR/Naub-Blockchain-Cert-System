@@ -28,6 +28,7 @@ import type { Certificate } from "@/lib/database";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeGenerator } from "@/components/qr-code-generator";
 import { CertificateDisplayFormal } from "@/components/certificate-display-formal";
+import { NaubBrand } from "@/components/naub-brand";
 
 export default function CertificateDetailPage() {
   const params = useParams();
@@ -247,13 +248,7 @@ export default function CertificateDetailPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <div className="flex items-center gap-3">
-            <Shield className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="font-bold text-xl">Certificate Details</h1>
-              <p className="text-xs text-muted-foreground">{certificate.id}</p>
-            </div>
-          </div>
+          <NaubBrand subtitle="Certificate Details" />
         </div>
       </header>
 
@@ -375,7 +370,7 @@ export default function CertificateDetailPage() {
                 QR Code Verification
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Scan to instantly verify this certificate — no login required
+                Scan to instantly verify this certificate - no login required
               </p>
             </CardHeader>
             <CardContent>
@@ -385,7 +380,7 @@ export default function CertificateDetailPage() {
                 </div>
                 <div className="flex-1 space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    Anyone — employers, NYSC, other institutions — can scan this QR code or visit
+                    Anyone - employers, NYSC, other institutions - can scan this QR code or visit
                     the verification page to confirm this certificate's authenticity directly
                     against the Ethereum Sepolia blockchain. No login or account required.
                   </p>
@@ -434,7 +429,7 @@ export default function CertificateDetailPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <Textarea
-                  placeholder="e.g., Issued in error — duplicate record; certificate replaced by NAUB/CERT/2026/0042"
+                  placeholder="e.g., Issued in error - duplicate record; certificate replaced by NAUB/CERT/2026/0042"
                   value={revocationReason}
                   onChange={(e) => setRevocationReason(e.target.value)}
                   rows={3}
@@ -468,7 +463,7 @@ export default function CertificateDetailPage() {
                 <p className="text-sm text-muted-foreground">
                   This permanently deletes all personal data (name, date of birth,
                   matriculation number) from the off-chain database. The on-chain
-                  hash record remains as an anonymous value — it cannot be erased
+                  hash record remains as an anonymous value - it cannot be erased
                   or modified.
                 </p>
               </CardHeader>

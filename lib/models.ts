@@ -3,7 +3,7 @@
  *
  * Mirrors the Certificate and Verification interfaces in lib/database.ts.
  * Personal data fields (studentName, matriculationNumber, dateOfBirth)
- * live here, off-chain, in compliance with NDPR data minimisation —
+ * live here, off-chain, in compliance with NDPR data minimisation -
  * only their SHA-256 hashes are ever written to the blockchain.
  */
 

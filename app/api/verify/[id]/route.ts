@@ -54,7 +54,7 @@ export async function GET(
 
     // Return public fields needed to render the formal NAUB certificate.
     // Note on NDPR: studentName and certificateNumber are printed on the
-    // physical certificate itself — they are not additional disclosures.
+    // physical certificate itself - they are not additional disclosures.
     // Date of birth and matriculation number are intentionally excluded.
     const publicCertificate = {
       id: certificate.id,

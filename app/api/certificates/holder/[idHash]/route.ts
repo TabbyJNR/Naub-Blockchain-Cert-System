@@ -10,7 +10,7 @@ export async function GET(
   try {
     const ip = getClientIp(request);
 
-    // Up to 20 holder lookups per 5 minutes per IP — generous for a real
+    // Up to 20 holder lookups per 5 minutes per IP - generous for a real
     // graduate checking their own records, tight enough to make brute-
     // force scanning for valid identity hashes impractical.
     const rateLimit = await checkRateLimit(`holder-lookup:${ip}`, 20, 5 * 60 * 1000);
@@ -29,7 +29,7 @@ export async function GET(
     const certificates = await database.getAllCertificates();
 
     // Return the fields the holder needs to see their own certificate.
-    // studentName is safe to return here — the holder already knows their
+    // studentName is safe to return here - the holder already knows their
     // own name; they supplied it to generate the identity hash. transactionHash
     // is included so the holder can verify the record on Etherscan.
     const holderCertificates = certificates

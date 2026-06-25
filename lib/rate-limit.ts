@@ -4,7 +4,7 @@
  * Used to protect the admin login flow and certificate issuance from
  * brute-force / spam abuse. Falls open (allows the request) if MongoDB
  * is not configured or unreachable, so a database outage never locks
- * legitimate users out — this is a defense-in-depth control, not the
+ * legitimate users out - this is a defense-in-depth control, not the
  * system's only line of defense.
  */
 
@@ -31,7 +31,7 @@ export async function checkRateLimit(
   try {
     const connected = await connectToDatabase();
     if (!connected) {
-      // No database configured (e.g. local dev without MONGODB_URI) —
+      // No database configured (e.g. local dev without MONGODB_URI) -
       // fail open rather than blocking all requests.
       return { allowed: true, remaining: maxRequests };
     }

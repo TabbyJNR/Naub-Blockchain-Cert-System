@@ -110,7 +110,7 @@ export default function IssueCertificatePage() {
         return;
       }
 
-      // Pre-flight duplicate check — runs BEFORE requesting a MetaMask
+      // Pre-flight duplicate check - runs BEFORE requesting a MetaMask
       // transaction, so a Registry Admin is never asked to pay real
       // Sepolia gas for an issuance that would be rejected anyway.
       setStatusMessage("Checking matriculation number and certificate number are unique...");
@@ -136,7 +136,7 @@ export default function IssueCertificatePage() {
         }
       } catch (dupCheckError) {
         // If the duplicate check itself fails (e.g. network issue), don't
-        // block issuance — the same check runs again server-side in
+        // block issuance - the same check runs again server-side in
         // /api/certificates/issue as defense in depth. Still log it so a
         // pattern of failures here is visible during debugging.
         console.warn("[Issue] Pre-flight duplicate check failed, continuing:", dupCheckError);
@@ -145,7 +145,7 @@ export default function IssueCertificatePage() {
 
       // Generate the certificate PDF and pin it to IPFS BEFORE requesting
       // the MetaMask transaction, so the real CID can be included in the
-      // on-chain issueCertificate() call itself — keeping the blockchain
+      // on-chain issueCertificate() call itself - keeping the blockchain
       // record and the actual uploaded document consistent.
       let preparedIpfsCid = "";
       try {
@@ -227,13 +227,13 @@ export default function IssueCertificatePage() {
         }, 1000);
       } else if (onChainTransactionHash) {
         // The on-chain transaction already succeeded (real Sepolia gas was
-        // spent) but saving the record failed — this needs to be loud and
+        // spent) but saving the record failed - this needs to be loud and
         // specific, not a generic message, since the certificate now
         // exists on-chain without a matching database record.
         toast({
           title: "Transaction succeeded, but saving the record failed",
           description:
-            `${data.error || "Unknown error"} — Your transaction was confirmed on Sepolia ` +
+            `${data.error || "Unknown error"} - Your transaction was confirmed on Sepolia ` +
             `(hash: ${onChainTransactionHash.slice(0, 10)}...). Please save this transaction hash ` +
             `and contact support; do not retry issuing the same certificate.`,
           variant: "destructive",
@@ -325,7 +325,7 @@ export default function IssueCertificatePage() {
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="studentEmail">
                     Student Email Address
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">(optional — certificate details will be sent here)</span>
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">(optional - certificate details will be sent here)</span>
                   </Label>
                   <Input
                     id="studentEmail"
@@ -383,7 +383,7 @@ export default function IssueCertificatePage() {
             <CardContent className="space-y-3 text-sm text-muted-foreground">
               <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />FR-05 fields are captured in the issuance form.</p>
               <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />FR-06 hashes are computed in the browser.</p>
-              <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />FR-07/FR-08 — certificate PDF is generated and pinned to IPFS automatically. The real CID is anchored on-chain.</p>
+              <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />FR-07/FR-08 - certificate PDF is generated and pinned to IPFS automatically. The real CID is anchored on-chain.</p>
               <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />NFR-07 keeps personally identifiable data off-chain.</p>
             </CardContent>
           </Card>

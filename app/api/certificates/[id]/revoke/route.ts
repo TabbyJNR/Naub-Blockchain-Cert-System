@@ -11,7 +11,7 @@ export async function POST(
   try {
     const ip = getClientIp(request);
 
-    // Up to 30 revocations per hour per IP — same bound as issuance.
+    // Up to 30 revocations per hour per IP - same bound as issuance.
     const rateLimit = await checkRateLimit(`revoke:${ip}`, 30, 60 * 60 * 1000);
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -26,7 +26,7 @@ export async function POST(
 
     // FR-09: a revocation reason is mandatory. The smart contract already
     // enforces this on-chain (EmptyRevocationReason), but the API must not
-    // silently substitute a generic placeholder when none is supplied —
+    // silently substitute a generic placeholder when none is supplied -
     // that would defeat the purpose of requiring one.
     if (!isValidReason(reason)) {
       return NextResponse.json(

@@ -1,5 +1,5 @@
 /**
- * NDPR Article 3.1(6) — Right to Erasure
+ * NDPR Article 3.1(6) - Right to Erasure
  *
  * Deletes all personally identifiable data from the off-chain database
  * for the specified student. The on-chain hash record is not modified; it
@@ -18,7 +18,7 @@ export async function DELETE(request: Request) {
   try {
     const ip = getClientIp(request);
 
-    // Up to 5 erasure requests per hour per IP — deliberately tight,
+    // Up to 5 erasure requests per hour per IP - deliberately tight,
     // since this is a destructive, irreversible operation.
     const rateLimit = await checkRateLimit(`erasure:${ip}`, 5, 60 * 60 * 1000);
     if (!rateLimit.allowed) {
