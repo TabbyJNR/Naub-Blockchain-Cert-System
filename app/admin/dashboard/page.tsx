@@ -29,7 +29,6 @@ import {
   KeyRound,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   getRegistryContractAddress,
   grantCertificateRoleOnChain,
@@ -58,7 +57,7 @@ interface Analytics {
 }
 
 /**
- * AdminControlPanel — Role Management and System Pause.
+ * AdminControlPanel - Role Management and System Pause.
  * Only shown to wallets with SUPERADMIN_ROLE (stored as "superadmin"
  * in sessionStorage after login). Registry Admins ("admin" role) see
  * this section as read-only, showing current status only.
@@ -517,7 +516,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Role Management + System Pause — SuperAdmin only */}
+        {/* Role Management + System Pause - SuperAdmin only */}
         <AdminControlPanel />
 
       </div>

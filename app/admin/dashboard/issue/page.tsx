@@ -81,7 +81,7 @@ export default function IssueCertificatePage() {
     if (missingRequired) {
       toast({
         title: "Incomplete NAUB certificate fields",
-        description: "Complete every Chapter 3 required certificate field before hashing.",
+        description: "Complete all required certificate fields before computing hashes.",
         variant: "destructive",
       });
       return null;
@@ -273,7 +273,7 @@ export default function IssueCertificatePage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <NaubBrand title="Issue New Certificate" subtitle="Registry Admin • Chapter 3 FR-05 to FR-09" />
+          <NaubBrand title="Issue New Certificate" subtitle="Registry Admin - Issue Certificate" />
         </div>
       </header>
 
@@ -282,7 +282,7 @@ export default function IssueCertificatePage() {
           <CardHeader>
             <CardTitle>NAUB Degree Certificate Details</CardTitle>
             <CardDescription>
-              Complete the eight academic fields specified in Chapter 3 before the browser computes the SHA-256 hashes and submits the registry transaction.
+              Complete all eight required fields. The browser computes SHA-256 hashes before submission - personal data never leaves your device unencrypted.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -378,13 +378,13 @@ export default function IssueCertificatePage() {
         <aside className="space-y-4">
           <Card className="border-primary/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Database className="h-5 w-5 text-primary" /> Chapter 3 Traceability</CardTitle>
+              <CardTitle className="flex items-center gap-2"><Database className="h-5 w-5 text-primary" /> System Requirements</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />FR-05 fields are captured in the issuance form.</p>
-              <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />FR-06 hashes are computed in the browser.</p>
-              <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />FR-07/FR-08 - certificate PDF is generated and pinned to IPFS automatically. The real CID is anchored on-chain.</p>
-              <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />NFR-07 keeps personally identifiable data off-chain.</p>
+              <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />All eight required certificate fields are captured.</p>
+              <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />SHA-256 hashes computed in the browser via Web Crypto API.</p>
+              <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />Certificate PDF generated and pinned to IPFS automatically. CID anchored on-chain.</p>
+              <p><CheckCircle className="mr-2 inline h-4 w-4 text-primary" />Personal data stays off-chain (NDPR compliance). Only hashes are recorded on the blockchain.</p>
             </CardContent>
           </Card>
         </aside>
