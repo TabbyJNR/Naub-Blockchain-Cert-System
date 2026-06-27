@@ -23,6 +23,7 @@ export interface Certificate {
   blockchainHash: string;
   transactionHash: string;
   blockNumber: number;
+  issuedBy?: string; // wallet address of the Registry Admin who issued this certificate
   // Revocation fields (optional)
   revocationTxHash?: string;
   revocationBlockNumber?: number;
@@ -73,6 +74,18 @@ class DatabaseService {
 
   async getAllCertificates(): Promise<Certificate[]> {
     return await this.fileStorage.getAllCertificates();
+  }
+
+  /**
+   * Returns only certificates issued by a specific Registry Admin wallet.
+   * Used to give Registry Admins a filtered view of their own work,
+   * rather than showing them every certificate in the system.
+   */
+  async getCertificatesByWallet(walletAddress: string): Promise<Certificate[]> {
+    const all = await this.fileStorage.getAllCertificates();
+    return all.filter(
+      (c: Certificate) => c.issuedBy?.toLowerCase() === walletAddress.toLowerCase(),
+    );
   }
 
   async updateCertificate(
@@ -174,6 +187,23 @@ class DatabaseService {
       .sort((a, b) => new Date(b.dateIssued).getTime() - new Date(a.dateIssued).getTime())
       .slice(0, 5);
 
+    // Registry Admin activity breakdown — groups certificates by the wallet
+    // that issued them. Used by the Super Admin dashboard to see per-admin
+    // workload and last activity. Registry Admins do not see this data.
+    const adminActivity: Record<string, { issued: number; lastActive: string }> = {};
+    for (const cert of certs) {
+      if (cert.issuedBy) {
+        const wallet = cert.issuedBy.toLowerCase();
+        if (!adminActivity[wallet]) {
+          adminActivity[wallet] = { issued: 0, lastActive: cert.dateIssued };
+        }
+        adminActivity[wallet].issued += 1;
+        if (cert.dateIssued > adminActivity[wallet].lastActive) {
+          adminActivity[wallet].lastActive = cert.dateIssued;
+        }
+      }
+    }
+
     return {
       totalCertificates: certs.length,
       validCertificates: validCerts.length,
@@ -182,6 +212,7 @@ class DatabaseService {
       activeCertificateHolders: distinctActiveHolders.size,
       recentVerifications: verifications.slice(-10).reverse(),
       recentCertificates,
+      registryAdminActivity: adminActivity,
     };
   }
 }

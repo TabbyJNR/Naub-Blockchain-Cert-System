@@ -212,6 +212,7 @@ export default function IssueCertificatePage() {
           ipfsCid: preparedIpfsCid || undefined,
           onChainTransactionHash,
           onChainBlockNumber,
+          issuedBy: sessionStorage.getItem("naub_wallet") || undefined,
         }),
       });
 

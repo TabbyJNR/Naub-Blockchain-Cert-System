@@ -42,6 +42,7 @@ export async function POST(request: Request) {
       dateOfAward,
       certificateNumber,
       studentEmail,
+      issuedBy, // wallet address of the Registry Admin submitting this request
       ipfsCid,
       institutionName = "Nigerian Army University Biu",
       certificateType = "DEGREE",
@@ -233,6 +234,7 @@ export async function POST(request: Request) {
       blockchainHash: finalCertHash,
       transactionHash,
       blockNumber,
+      issuedBy: typeof issuedBy === "string" && issuedBy.startsWith("0x") ? issuedBy.toLowerCase() : undefined,
     };
 
     await database.createCertificate(certificate);

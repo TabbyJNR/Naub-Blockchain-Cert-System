@@ -54,6 +54,7 @@ interface Analytics {
     certificateId: string;
     timestamp: number;
   }>;
+  registryAdminActivity: Record<string, { issued: number; lastActive: string }> | null;
 }
 
 /**
@@ -288,11 +289,13 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      // Single API call: getAnalytics() already computes totals, the
-      // active-holder count, AND the 5 most recent certificates in one
-      // pass server-side, so the dashboard no longer needs a second,
-      // separate full-table-scan request to /api/certificates.
-      const analyticsResponse = await fetch("/api/admin/analytics");
+      const role = sessionStorage.getItem("naub_role") || "";
+      const wallet = sessionStorage.getItem("naub_wallet") || "";
+      const params = new URLSearchParams();
+      if (role) params.set("role", role);
+      if (wallet) params.set("wallet", wallet);
+
+      const analyticsResponse = await fetch(`/api/admin/analytics?${params.toString()}`);
 
       if (analyticsResponse.ok) {
         const analyticsData = await analyticsResponse.json();
@@ -300,9 +303,6 @@ export default function AdminDashboard() {
         setCertificates(analyticsData.recentCertificates || []);
       }
 
-      // System is "Operational" only if the analytics endpoint actually
-      // responded successfully - this reflects real backend/database
-      // health rather than a hardcoded label.
       setSystemStatus(analyticsResponse.ok ? "Operational" : "Degraded");
     } catch (error) {
       console.error("[Dashboard] Error loading data:", error);
@@ -465,6 +465,9 @@ export default function AdminDashboard() {
                       <th className="text-left p-4 font-medium">Programme of Study</th>
                       <th className="text-left p-4 font-medium">Issue Date</th>
                       <th className="text-left p-4 font-medium">Status</th>
+                      {sessionStorage.getItem("naub_role") === "superadmin" && (
+                        <th className="text-left p-4 font-medium">Issued By</th>
+                      )}
                       <th className="text-left p-4 font-medium">Actions</th>
                     </tr>
                   </thead>
@@ -484,6 +487,13 @@ export default function AdminDashboard() {
                               {cert.status}
                             </Badge>
                           </td>
+                          {sessionStorage.getItem("naub_role") === "superadmin" && (
+                            <td className="p-4 font-mono text-xs text-muted-foreground">
+                              {cert.issuedBy
+                                ? `${cert.issuedBy.slice(0, 6)}...${cert.issuedBy.slice(-4)}`
+                                : "-"}
+                            </td>
+                          )}
                           <td className="p-4">
                             <Link href={`/admin/dashboard/certificate/${cert.id}`}>
                               <Button variant="ghost" size="sm">View</Button>
@@ -515,6 +525,40 @@ export default function AdminDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Registry Admin Activity - SuperAdmin only */}
+        {analytics?.registryAdminActivity && Object.keys(analytics.registryAdminActivity).length > 0 && (
+          <Card className="border-primary/15">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Users className="h-5 w-5 text-primary" />
+                Registry Admin Activity
+              </CardTitle>
+              <CardDescription>
+                Per-admin certificate issuance breakdown. Each row represents a wallet
+                that has issued at least one certificate through this system.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="divide-y">
+                {Object.entries(analytics.registryAdminActivity).map(([wallet, data]) => (
+                  <div key={wallet} className="flex items-center justify-between py-3">
+                    <div>
+                      <p className="font-mono text-xs text-muted-foreground break-all">{wallet}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Last active: {data.lastActive}
+                      </p>
+                    </div>
+                    <div className="text-right ml-4 flex-shrink-0">
+                      <p className="text-2xl font-black text-primary">{data.issued}</p>
+                      <p className="text-xs text-muted-foreground">certificates</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Role Management + System Pause - SuperAdmin only */}
         <AdminControlPanel />

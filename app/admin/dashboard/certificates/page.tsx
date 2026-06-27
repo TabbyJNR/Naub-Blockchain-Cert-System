@@ -29,15 +29,23 @@ export default function CertificatesPage() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [role, setRole] = useState("");
 
   useEffect(() => {
+    const storedRole = sessionStorage.getItem("naub_role") || "";
+    setRole(storedRole);
     loadCertificates();
   }, []);
 
   const loadCertificates = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/certificates");
+      const role = sessionStorage.getItem("naub_role") || "";
+      const wallet = sessionStorage.getItem("naub_wallet") || "";
+      const params = new URLSearchParams();
+      if (role) params.set("role", role);
+      if (wallet) params.set("wallet", wallet);
+      const res = await fetch(`/api/certificates?${params.toString()}`);
       if (res.ok) setCertificates(await res.json());
     } catch {
       // silently fail
@@ -65,7 +73,7 @@ export default function CertificatesPage() {
                 Dashboard
               </Button>
             </Link>
-            <NaubBrand subtitle="Certificate Management" />
+            <NaubBrand subtitle={role === "superadmin" ? "All Certificates" : "My Issued Certificates"} />
           </div>
           <div className="flex items-center gap-2">
             <Link href="/admin/dashboard/issue">
@@ -131,6 +139,7 @@ export default function CertificatesPage() {
                         <th className="text-left p-4 font-medium">Issue Date</th>
                         <th className="text-left p-4 font-medium">Date of Award</th>
                         <th className="text-left p-4 font-medium">Status</th>
+                        {role === "superadmin" && <th className="text-left p-4 font-medium">Issued By</th>}
                         <th className="text-left p-4 font-medium">Actions</th>
                       </tr>
                     </thead>
@@ -147,6 +156,13 @@ export default function CertificatesPage() {
                               {cert.status}
                             </Badge>
                           </td>
+                          {role === "superadmin" && (
+                            <td className="p-4 font-mono text-xs text-muted-foreground">
+                              {cert.issuedBy
+                                ? `${cert.issuedBy.slice(0, 6)}...${cert.issuedBy.slice(-4)}`
+                                : "-"}
+                            </td>
+                          )}
                           <td className="p-4">
                             <Link href={`/admin/dashboard/certificate/${cert.id}`}>
                               <Button variant="ghost" size="sm">View</Button>

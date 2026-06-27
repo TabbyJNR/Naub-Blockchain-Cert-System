@@ -54,6 +54,7 @@ const CertificateSchema = new Schema<CertificateDocument>(
     blockchainHash: { type: String, required: true, index: true },
     transactionHash: { type: String, required: true },
     blockNumber: { type: Number, required: true },
+    issuedBy: { type: String, index: true }, // Registry Admin wallet address
     revocationTxHash: { type: String },
     revocationBlockNumber: { type: Number },
     revokedAt: { type: String },
