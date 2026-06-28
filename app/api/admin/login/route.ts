@@ -166,16 +166,54 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Signature does not match wallet address" }, { status: 401 });
     }
 
-    // Determine role
+    // Determine role - the smart contract is the authoritative source.
+    // hasRole() is a free view call (no gas). We fall back to env vars
+    // only if no contract is configured (local dev without a deployment).
     let role: "superadmin" | "admin" | null = null;
-    if (SUPER_ADMIN_WALLETS.includes(recoveredAddress)) {
-      role = "superadmin";
-    } else if (REGISTRY_ADMIN_WALLETS.includes(recoveredAddress)) {
-      role = "admin";
+    const contractAddress = process.env.CERTIFICATE_REGISTRY_ADDRESS;
+
+    if (contractAddress && contractAddress.startsWith("0x")) {
+      try {
+        const rpcUrl = process.env.TESTNET_RPC_URL || "https://rpc.sepolia.org";
+        const provider = new ethers.JsonRpcProvider(rpcUrl);
+        const abi = [
+          "function hasRole(bytes32 role, address account) external view returns (bool)",
+          "function SUPERADMIN_ROLE() external view returns (bytes32)",
+          "function CERTIFICATE_ROLE() external view returns (bytes32)",
+        ];
+        const contract = new ethers.Contract(contractAddress, abi, provider);
+
+        const [superAdminRole, certificateRole] = await Promise.all([
+          contract.SUPERADMIN_ROLE(),
+          contract.CERTIFICATE_ROLE(),
+        ]);
+
+        const [isSuperAdmin, isCertAdmin] = await Promise.all([
+          contract.hasRole(superAdminRole, recoveredAddress),
+          contract.hasRole(certificateRole, recoveredAddress),
+        ]);
+
+        if (isSuperAdmin) {
+          role = "superadmin";
+        } else if (isCertAdmin) {
+          role = "admin";
+        }
+      } catch (contractError) {
+        console.error("[Auth] Contract role check failed, falling back to env vars:", contractError);
+      }
     }
 
-    // In development with no wallets configured, accept any wallet as admin
-    if (!role && SUPER_ADMIN_WALLETS.length === 0 && REGISTRY_ADMIN_WALLETS.length === 0) {
+    // Env var fallback - used when contract check failed or no contract configured
+    if (!role) {
+      if (SUPER_ADMIN_WALLETS.includes(recoveredAddress)) {
+        role = "superadmin";
+      } else if (REGISTRY_ADMIN_WALLETS.includes(recoveredAddress)) {
+        role = "admin";
+      }
+    }
+
+    // Dev mode: no wallets configured at all - accept any wallet as admin
+    if (!role && SUPER_ADMIN_WALLETS.length === 0 && REGISTRY_ADMIN_WALLETS.length === 0 && !contractAddress) {
       role = "admin";
     }
 

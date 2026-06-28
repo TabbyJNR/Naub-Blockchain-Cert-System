@@ -281,16 +281,24 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [systemStatus, setSystemStatus] = useState<"Operational" | "Degraded">("Operational");
+  // Read session values into state on mount so they are never read
+  // directly inside JSX, which would cause a hydration mismatch between
+  // server-rendered HTML (where sessionStorage doesn't exist) and the
+  // client-rendered version.
+  const [sessionRole, setSessionRole] = useState<string>("");
+  const [sessionWallet, setSessionWallet] = useState<string>("");
   const router = useRouter();
 
   useEffect(() => {
-    loadData();
+    const role = sessionStorage.getItem("naub_role") || "";
+    const wallet = sessionStorage.getItem("naub_wallet") || "";
+    setSessionRole(role);
+    setSessionWallet(wallet);
+    loadData(role, wallet);
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (role: string, wallet: string) => {
     try {
-      const role = sessionStorage.getItem("naub_role") || "";
-      const wallet = sessionStorage.getItem("naub_wallet") || "";
       const params = new URLSearchParams();
       if (role) params.set("role", role);
       if (wallet) params.set("wallet", wallet);
@@ -465,7 +473,7 @@ export default function AdminDashboard() {
                       <th className="text-left p-4 font-medium">Programme of Study</th>
                       <th className="text-left p-4 font-medium">Issue Date</th>
                       <th className="text-left p-4 font-medium">Status</th>
-                      {sessionStorage.getItem("naub_role") === "superadmin" && (
+                      {sessionRole === "superadmin" && (
                         <th className="text-left p-4 font-medium">Issued By</th>
                       )}
                       <th className="text-left p-4 font-medium">Actions</th>
@@ -487,7 +495,7 @@ export default function AdminDashboard() {
                               {cert.status}
                             </Badge>
                           </td>
-                          {sessionStorage.getItem("naub_role") === "superadmin" && (
+                          {sessionRole === "superadmin" && (
                             <td className="p-4 font-mono text-xs text-muted-foreground">
                               {cert.issuedBy
                                 ? `${cert.issuedBy.slice(0, 6)}...${cert.issuedBy.slice(-4)}`
