@@ -166,59 +166,78 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Signature does not match wallet address" }, { status: 401 });
     }
 
-    // Determine role - the smart contract is the authoritative source.
-    // hasRole() is a free view call (no gas). We fall back to env vars
-    // only if no contract is configured (local dev without a deployment).
+    // Determine role.
+    // The smart contract is the authoritative source — hasRole() is a
+    // free view call (no gas). We use pre-computed role hashes (they are
+    // keccak256 of a fixed string and never change) so we only need one
+    // RPC call per check instead of two. We try two RPC endpoints and
+    // fall back to env vars if both fail.
     let role: "superadmin" | "admin" | null = null;
     const contractAddress = process.env.CERTIFICATE_REGISTRY_ADDRESS;
 
-    if (contractAddress && contractAddress.startsWith("0x")) {
-      try {
-        const rpcUrl = process.env.TESTNET_RPC_URL || "https://rpc.sepolia.org";
-        const provider = new ethers.JsonRpcProvider(rpcUrl);
-        const abi = [
-          "function hasRole(bytes32 role, address account) external view returns (bool)",
-          "function SUPERADMIN_ROLE() external view returns (bytes32)",
-          "function CERTIFICATE_ROLE() external view returns (bytes32)",
-        ];
-        const contract = new ethers.Contract(contractAddress, abi, provider);
+    // Pre-computed keccak256 role hashes matching CertificateRegistry.sol
+    const SUPERADMIN_ROLE_HASH = ethers.keccak256(ethers.toUtf8Bytes("SUPERADMIN_ROLE"));
+    const CERTIFICATE_ROLE_HASH = ethers.keccak256(ethers.toUtf8Bytes("CERTIFICATE_ROLE"));
 
-        const [superAdminRole, certificateRole] = await Promise.all([
-          contract.SUPERADMIN_ROLE(),
-          contract.CERTIFICATE_ROLE(),
-        ]);
+    const abi = ["function hasRole(bytes32 role, address account) external view returns (bool)"];
 
-        const [isSuperAdmin, isCertAdmin] = await Promise.all([
-          contract.hasRole(superAdminRole, recoveredAddress),
-          contract.hasRole(certificateRole, recoveredAddress),
-        ]);
+    // Always check env vars first (fastest, no network call)
+    if (SUPER_ADMIN_WALLETS.includes(recoveredAddress)) {
+      role = "superadmin";
+    } else if (REGISTRY_ADMIN_WALLETS.includes(recoveredAddress)) {
+      role = "admin";
+    }
 
-        if (isSuperAdmin) {
-          role = "superadmin";
-        } else if (isCertAdmin) {
-          role = "admin";
+    // If not found in env vars, check the contract (catches wallets
+    // added on-chain via grantCertificateRole() without updating env vars)
+    if (!role && contractAddress && contractAddress.startsWith("0x")) {
+      const rpcEndpoints = [
+        process.env.TESTNET_RPC_URL,
+        "https://ethereum-sepolia-rpc.publicnode.com",
+        "https://rpc.sepolia.org",
+      ].filter(Boolean) as string[];
+
+      for (const rpcUrl of rpcEndpoints) {
+        try {
+          const provider = new ethers.JsonRpcProvider(rpcUrl);
+          const contract = new ethers.Contract(contractAddress, abi, provider);
+
+          // Check both roles in parallel with a 5-second timeout
+          const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("RPC timeout")), 5000)
+          );
+
+          const [isSuperAdmin, isCertAdmin] = await Promise.race([
+            Promise.all([
+              contract.hasRole(SUPERADMIN_ROLE_HASH, recoveredAddress),
+              contract.hasRole(CERTIFICATE_ROLE_HASH, recoveredAddress),
+            ]),
+            timeout,
+          ]);
+
+          if (isSuperAdmin) {
+            role = "superadmin";
+          } else if (isCertAdmin) {
+            role = "admin";
+          }
+          break; // RPC call succeeded — no need to try backup endpoints
+        } catch (rpcError) {
+          console.warn(`[Auth] RPC ${rpcUrl} failed:`, rpcError);
+          // Try next endpoint
         }
-      } catch (contractError) {
-        console.error("[Auth] Contract role check failed, falling back to env vars:", contractError);
       }
     }
 
-    // Env var fallback - used when contract check failed or no contract configured
-    if (!role) {
-      if (SUPER_ADMIN_WALLETS.includes(recoveredAddress)) {
-        role = "superadmin";
-      } else if (REGISTRY_ADMIN_WALLETS.includes(recoveredAddress)) {
-        role = "admin";
-      }
-    }
-
-    // Dev mode: no wallets configured at all - accept any wallet as admin
+    // Dev mode: no config at all - accept any wallet as admin
     if (!role && SUPER_ADMIN_WALLETS.length === 0 && REGISTRY_ADMIN_WALLETS.length === 0 && !contractAddress) {
       role = "admin";
     }
 
     if (!role) {
-      return NextResponse.json({ error: "Wallet does not hold a recognised role on the CertificateRegistry contract" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Wallet does not hold a recognised role on the CertificateRegistry contract" },
+        { status: 403 }
+      );
     }
 
     await deleteNonce(walletAddress.toLowerCase());
