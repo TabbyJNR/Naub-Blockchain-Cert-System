@@ -471,7 +471,10 @@ export default function CertificateDetailPage() {
                 <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-800">
                   <strong>This action is irreversible.</strong> Once personal data is
                   erased, it cannot be recovered. The certificate will no longer be
-                  retrievable via the Holder Portal.
+                  retrievable via the Holder Portal by name and date of birth. The
+                  certificate will continue to verify successfully on the public
+                  /verify page and on Etherscan, since the on-chain hash record is
+                  never modified.
                 </div>
                 {erasureMessage && (
                   <div className={`rounded-lg p-3 text-sm ${erasureMessage.startsWith("✓") ? "bg-green-50 text-green-800 border border-green-200" : "bg-red-50 text-red-800 border border-red-200"}`}>

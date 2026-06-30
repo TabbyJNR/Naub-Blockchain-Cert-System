@@ -1,10 +1,14 @@
 /**
  * NDPR Article 3.1(6) - Right to Erasure
  *
- * Deletes all personally identifiable data from the off-chain database
- * for the specified student. The on-chain hash record is not modified; it
- * remains as an anonymous mathematical value with no recoverable connection
- * to any identifiable person.
+ * Permanently clears personally identifiable fields (student name, date
+ * of birth, matriculation number) from the certificate record in MongoDB.
+ * The certificate record itself is NOT deleted - its verification-relevant
+ * fields (blockchainHash, transactionHash, certificateNumber,
+ * programmeOfStudy, classOfDegree, dateOfAward, status) remain intact, so
+ * the certificate continues to verify successfully on the public /verify
+ * page and on Etherscan after erasure. Only name-based lookup via the
+ * Holder Portal stops working, which is the intended effect.
  *
  * This is a destructive, irreversible operation, so it is both validated
  * and rate-limited more tightly than read-only endpoints.
@@ -43,7 +47,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({
       success: true,
       deleted: result.deleted,
-      message: `${result.deleted} certificate record(s) erased. On-chain hash records remain as anonymous values.`,
+      message: `Personal data cleared for ${result.deleted} certificate record(s). The certificate(s) remain verifiable by hash or certificate number - only name/date-of-birth lookup (Holder Portal) is now disabled for these records. The on-chain hash remains unchanged, as an anonymous value.`,
     });
   } catch (error) {
     console.error("[Erasure API] Error:", error);

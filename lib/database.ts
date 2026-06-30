@@ -1,5 +1,7 @@
 // Database service - persists to MongoDB Atlas via lib/storage.ts
 
+import crypto from "crypto";
+
 export interface Certificate {
   id: string;
   // Student identity fields (stored off-chain only - never written to blockchain)
@@ -108,8 +110,21 @@ class DatabaseService {
   }
 
   /**
-   * NDPR right-to-erasure: delete all off-chain personal data for a student.
-   * The on-chain hash record remains as an anonymous mathematical value.
+   * NDPR right-to-erasure (Article 3.1(6)): permanently delete personal
+   * data for a student while keeping the certificate record's
+   * verification-relevant fields intact.
+   *
+   * IMPORTANT: this does NOT delete the certificate document entirely.
+   * Deleting the whole record would also remove blockchainHash,
+   * transactionHash, certificateNumber, programmeOfStudy, etc. - fields
+   * that have nothing to do with personal data and are required for
+   * public /verify lookups and the Holder Portal's "this hash still
+   * exists on-chain" guarantee to remain true. Only studentName,
+   * dateOfBirth, and matriculationNumber (the personally identifiable
+   * fields) are cleared. The certificate remains fully verifiable by
+   * hash, certificate number, or ID afterward - it simply can no longer
+   * be found by name/DOB lookup in the Holder Portal, which is exactly
+   * the intended effect of erasure.
    */
   async erasePersonalData(
     matriculationNumber: string,
@@ -122,7 +137,23 @@ class DatabaseService {
         c.dateOfBirth === dateOfBirth,
     );
     for (const cert of targets) {
-      await this.deleteCertificate(cert.id);
+      // Overwrite the off-chain copy of holderIdentityHash too. The real,
+      // permanent copy already lives immutably on-chain (anchored at
+      // issuance) - that is the authoritative record by design. Replacing
+      // the off-chain copy here is necessary so the Holder Portal can no
+      // longer match this certificate using the original name + DOB,
+      // which is exactly what erasure is supposed to prevent.
+      const erasedMarkerHash = crypto
+        .createHash("sha256")
+        .update(`ERASED|${cert.id}|${Date.now()}`)
+        .digest("hex");
+
+      await this.updateCertificate(cert.id, {
+        studentName: "[ERASED]",
+        dateOfBirth: "",
+        matriculationNumber: "",
+        holderIdentityHash: erasedMarkerHash,
+      });
     }
     return { deleted: targets.length };
   }
