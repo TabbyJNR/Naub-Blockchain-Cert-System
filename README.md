@@ -11,11 +11,11 @@ A blockchain-based academic certificate issuance and verification platform for t
 
 The system allows the NAUB Registry to issue degree certificates that are:
 
-- **Cryptographically hashed** — a SHA-256 hash of all eight certificate fields is computed in the browser before submission
-- **Anchored on-chain** — the hash, an anonymised holder identity hash, and the IPFS document CID are permanently recorded in a smart contract on Ethereum Sepolia via MetaMask (Registry Admin pays real gas, creating an attributable, tamper-proof record)
-- **Stored as real PDFs on IPFS** — a formal NAUB Statement of Result PDF is generated server-side and pinned to IPFS via Pinata at issuance time
-- **Publicly verifiable** — anyone can verify a certificate by hash, certificate number, QR scan, or PDF upload at `/verify`, with no login or payment required
-- **NDPR-compliant** — personal data lives only in MongoDB and can be permanently erased under Article 3.1(6); the on-chain record remains as an anonymous mathematical value
+- **Cryptographically hashed** - a SHA-256 hash of all eight certificate fields is computed in the browser before submission
+- **Anchored on-chain** - the hash, an anonymised holder identity hash, and the IPFS document CID are permanently recorded in a smart contract on Ethereum Sepolia via MetaMask (Registry Admin pays real gas, creating an attributable, tamper-proof record)
+- **Stored as real PDFs on IPFS** - a formal NAUB Statement of Result PDF is generated server-side and pinned to IPFS via Pinata at issuance time
+- **Publicly verifiable** - anyone can verify a certificate by hash, certificate number, QR scan, or PDF upload at `/verify`, with no login or payment required
+- **NDPR-compliant** - personal data lives only in MongoDB and can be permanently erased under Article 3.1(6); the on-chain record remains as an anonymous mathematical value
 
 ---
 
@@ -25,9 +25,9 @@ Three-tier decentralised application:
 
 | Tier | Technology |
 |------|-----------|
-| Frontend | Next.js (React) — Vercel |
+| Frontend | Next.js (React) - Vercel |
 | Backend | Next.js API routes (Node.js) |
-| Blockchain | Ethereum Sepolia — CertificateRegistry.sol (OpenZeppelin AccessControl + Pausable) |
+| Blockchain | Ethereum Sepolia - CertificateRegistry.sol (OpenZeppelin AccessControl + Pausable) |
 | Off-chain storage | MongoDB Atlas |
 | Document storage | IPFS via Pinata |
 | Authentication | EIP-191 wallet signature + JWT |
@@ -38,8 +38,8 @@ Three-tier decentralised application:
 
 See [`contracts/README.md`](contracts/README.md) for the full Hardhat project guide.
 
-- **38 unit tests** — all passing (deployment/roles, role management, issuance, verification, revocation, pausable controls)
-- **Slither analysis** — 0 HIGH, 0 MEDIUM, 0 LOW findings in `CertificateRegistry.sol`
+- **38 unit tests** - all passing (deployment/roles, role management, issuance, verification, revocation, pausable controls)
+- **Slither analysis** - 0 HIGH, 0 MEDIUM, 0 LOW findings in `CertificateRegistry.sol`
 - **Deployed** on Ethereum Sepolia Testnet
 
 ---

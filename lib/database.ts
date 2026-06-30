@@ -187,7 +187,7 @@ class DatabaseService {
       .sort((a, b) => new Date(b.dateIssued).getTime() - new Date(a.dateIssued).getTime())
       .slice(0, 5);
 
-    // Registry Admin activity breakdown — groups certificates by the wallet
+    // Registry Admin activity breakdown - groups certificates by the wallet
     // that issued them. Used by the Super Admin dashboard to see per-admin
     // workload and last activity. Registry Admins do not see this data.
     const adminActivity: Record<string, { issued: number; lastActive: string }> = {};

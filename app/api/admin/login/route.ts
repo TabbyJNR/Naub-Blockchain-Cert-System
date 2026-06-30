@@ -167,7 +167,7 @@ export async function POST(request: Request) {
     }
 
     // Determine role.
-    // The smart contract is the authoritative source — hasRole() is a
+    // The smart contract is the authoritative source - hasRole() is a
     // free view call (no gas). We use pre-computed role hashes (they are
     // keccak256 of a fixed string and never change) so we only need one
     // RPC call per check instead of two. We try two RPC endpoints and
@@ -220,7 +220,7 @@ export async function POST(request: Request) {
           } else if (isCertAdmin) {
             role = "admin";
           }
-          break; // RPC call succeeded — no need to try backup endpoints
+          break; // RPC call succeeded - no need to try backup endpoints
         } catch (rpcError) {
           console.warn(`[Auth] RPC ${rpcUrl} failed:`, rpcError);
           // Try next endpoint

@@ -1,4 +1,4 @@
-# NAUB CertificateRegistry — Smart Contract
+# NAUB CertificateRegistry - Smart Contract
 
 Hardhat project containing the `CertificateRegistry` smart contract for the
 Nigerian Army University Biu (NAUB) Blockchain Certificate System, as designed
@@ -14,15 +14,15 @@ verifiable record of every certificate issued or revoked.
 
 Key design decisions (Chapter 3):
 
-- **No PII on-chain** — only one-way SHA-256 hashes are stored. Personal data
+- **No PII on-chain** - only one-way SHA-256 hashes are stored. Personal data
   lives off-chain in MongoDB and can be erased independently to satisfy NDPR
   Article 3.1(6) (right to erasure) without affecting the on-chain record.
 - **Two roles** enforce the institutional hierarchy:
-  - `SUPERADMIN_ROLE` — Registrar / Vice-Chancellor's office. Can grant/revoke
+  - `SUPERADMIN_ROLE` - Registrar / Vice-Chancellor's office. Can grant/revoke
     `CERTIFICATE_ROLE` and pause the contract in an emergency.
-  - `CERTIFICATE_ROLE` — Registry Admin (issuing staff). Can issue and revoke
+  - `CERTIFICATE_ROLE` - Registry Admin (issuing staff). Can issue and revoke
     individual certificates.
-- **`verifyCertificate`** is a free, read-only `view` function — any employer,
+- **`verifyCertificate`** is a free, read-only `view` function - any employer,
   NYSC office, or third party can verify a certificate at zero gas cost,
   independent of the NAUB backend being online.
 
@@ -108,15 +108,15 @@ Results (see `slither-report.json`):
 - **0 MEDIUM findings** in `CertificateRegistry.sol`
 - **0 LOW findings** in `CertificateRegistry.sol`
 - 9 informational findings, all in imported OpenZeppelin library files
-  (different pragma versions, unused internal functions — not actionable)
+  (different pragma versions, unused internal functions - not actionable)
 
 ---
 
 ## Deploy to Ethereum Sepolia Testnet
 
 1. Make sure your `.env` is filled in with:
-   - `SEPOLIA_RPC_URL` — e.g. `https://sepolia.infura.io/v3/YOUR_KEY`
-   - `DEPLOYER_PRIVATE_KEY` — private key of a wallet with Sepolia ETH
+   - `SEPOLIA_RPC_URL` - e.g. `https://sepolia.infura.io/v3/YOUR_KEY`
+   - `DEPLOYER_PRIVATE_KEY` - private key of a wallet with Sepolia ETH
 
 2. Run:
    ```bash

@@ -8,7 +8,7 @@ import { database } from "@/lib/database";
  * Registry Admin (role=admin): returns only certificates they issued,
  *   filtered by their wallet address passed as ?wallet=0x...
  *
- * The role and wallet are supplied by the client from sessionStorage —
+ * The role and wallet are supplied by the client from sessionStorage -
  * this is sufficient for the dashboard UI. The analytics endpoint
  * performs its own full-system computation server-side, so no
  * sensitive data depends solely on the client-supplied role param.

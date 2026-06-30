@@ -203,6 +203,8 @@ export async function sendCertificateIssuanceEmail(
 </html>
   `.trim();
 
+  const fromAddress = process.env.RESEND_FROM_ADDRESS || "NAUB Certificate System <onboarding@resend.dev>";
+
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -211,7 +213,7 @@ export async function sendCertificateIssuanceEmail(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "NAUB Certificate System <onboarding@resend.dev>",
+        from: fromAddress,
         to: [studentEmail],
         subject: `Your NAUB Degree Certificate - ${certificate.certificateNumber}`,
         html,
@@ -221,6 +223,14 @@ export async function sendCertificateIssuanceEmail(
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
       console.error(`[Email] Resend send failed (${response.status}):`, errorText);
+      if (fromAddress.includes("onboarding@resend.dev")) {
+        console.error(
+          "[Email] Using Resend's shared test sender (onboarding@resend.dev) only " +
+          "delivers to the email address you signed up to Resend with. To send to " +
+          "real student emails, verify a domain at https://resend.com/domains and " +
+          "set RESEND_FROM_ADDRESS to an address on that domain."
+        );
+      }
     } else {
       const data = await response.json();
       console.log(`[Email] Certificate notification sent successfully. ID: ${data.id}`);
