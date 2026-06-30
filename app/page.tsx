@@ -147,10 +147,9 @@ export default function HomePage() {
               </div>
               <div>
                 <Search className="mb-3 h-7 w-7 text-primary" />
-                <div className="text-2xl font-black">≤2s</div>
+                <div className="text-2xl font-black">~2s</div>
                 <p className="mt-1 text-sm text-secondary-foreground/75">
-                  Target public verification response time under normal Sepolia network
-                  conditions
+                  Average public verification response time under typical conditions
                 </p>
               </div>
             </div>
