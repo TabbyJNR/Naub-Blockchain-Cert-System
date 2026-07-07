@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { database } from "@/lib/database";
 import { blockchain } from "@/lib/blockchain";
-import { generateCertificateId, canonicalCertificatePayload, canonicalHolderPayload, NAUB_VICE_CHANCELLOR_NAME } from "@/lib/certificate-utils";
+import { generateCertificateId, canonicalCertificatePayload, canonicalHolderPayloadByMatric, NAUB_VICE_CHANCELLOR_NAME } from "@/lib/certificate-utils";
 import type { Certificate } from "@/lib/database";
 import crypto from "crypto";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -136,7 +136,7 @@ export async function POST(request: Request) {
       holderIdentityHash ||
       crypto
         .createHash("sha256")
-        .update(canonicalHolderPayload(cleanStudentName, dateOfBirth))
+        .update(canonicalHolderPayloadByMatric(cleanStudentName, cleanMatriculationNumber))
         .digest("hex");
 
     let transactionHash: string;

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { NaubBrand } from "@/components/naub-brand";
-import { canonicalHolderPayload, formatDate, getCertificateStatusColor } from "@/lib/certificate-utils";
+import { canonicalHolderPayloadByMatric, formatDate, getCertificateStatusColor } from "@/lib/certificate-utils";
 import {
   ArrowLeft,
   CheckCircle,
@@ -48,7 +48,7 @@ async function sha256Hex(payload: string) {
 
 export default function HolderPortalPage() {
   const [fullName, setFullName] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [matriculationNumber, setMatriculationNumber] = useState("");
   const [certificates, setCertificates] = useState<HolderCertificate[]>([]);
   const [identityHash, setIdentityHash] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +64,7 @@ export default function HolderPortalPage() {
     setCertificates([]);
 
     try {
-      const hash = await sha256Hex(canonicalHolderPayload(fullName.trim(), dateOfBirth));
+      const hash = await sha256Hex(canonicalHolderPayloadByMatric(fullName.trim(), matriculationNumber));
       setIdentityHash(hash);
       const response = await fetch(`/api/certificates/holder/${hash}`);
       if (!response.ok) throw new Error("Lookup failed");
@@ -109,7 +109,7 @@ export default function HolderPortalPage() {
           <h2 className="text-3xl font-bold">NAUB Certificate Holder Portal</h2>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
             Retrieve your blockchain-verified degree certificate records by entering
-            your registered name and date of birth.
+            your registered name and matriculation number.
           </p>
         </div>
 
@@ -118,7 +118,7 @@ export default function HolderPortalPage() {
           <CardHeader>
             <CardTitle>Find my certificates</CardTitle>
             <CardDescription>
-              Your name and date of birth are hashed in your browser - they are never
+              Your name and matriculation number are hashed in your browser - they are never
               sent to the server in plain text.
             </CardDescription>
           </CardHeader>
@@ -138,12 +138,12 @@ export default function HolderPortalPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                <Label htmlFor="matriculationNumber">Matriculation Number</Label>
                 <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  id="matriculationNumber"
+                  value={matriculationNumber}
+                  onChange={(e) => setMatriculationNumber(e.target.value)}
+                  placeholder="e.g., COS/23U/3930"
                   required
                 />
               </div>
@@ -172,9 +172,9 @@ export default function HolderPortalPage() {
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
               <XCircle className="mx-auto mb-3 h-10 w-10 opacity-40" />
-              <p>No certificate records were found for that name and date of birth.</p>
+              <p>No certificate records were found for that name and matriculation number.</p>
               <p className="mt-1 text-sm">
-                Check that the name and date of birth exactly match what was registered
+                Check that the name and matriculation number exactly match what was registered
                 at NAUB.
               </p>
             </CardContent>

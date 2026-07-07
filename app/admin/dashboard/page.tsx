@@ -280,7 +280,7 @@ export default function AdminDashboard() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [systemStatus, setSystemStatus] = useState<"Operational" | "Degraded">("Operational");
+  const [systemStatus, setSystemStatus] = useState<"Operational" | "Paused" | "Degraded">("Operational");
   // Read session values into state on mount so they are never read
   // directly inside JSX, which would cause a hydration mismatch between
   // server-rendered HTML (where sessionStorage doesn't exist) and the
@@ -295,7 +295,33 @@ export default function AdminDashboard() {
     setSessionRole(role);
     setSessionWallet(wallet);
     loadData(role, wallet);
+    checkPauseStatus();
+
+    // Poll the on-chain pause state every 30 seconds so the System Status
+    // tile stays live even if paused/unpaused from a different session.
+    const interval = setInterval(checkPauseStatus, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  /**
+   * Checks the CertificateRegistry contract's live paused() state so the
+   * System Status tile reflects reality - not just whether the analytics
+   * API responded. This is a free view call, no gas or wallet needed.
+   * Polled again every 30 seconds so the tile updates live if a Super
+   * Admin pauses/unpauses the system from another session or tab.
+   */
+  const checkPauseStatus = async () => {
+    try {
+      const contractAddress = await getRegistryContractAddress();
+      if (!contractAddress) return;
+      const paused = await isContractPaused(contractAddress);
+      setSystemStatus((prev) => (prev === "Degraded" ? prev : paused ? "Paused" : "Operational"));
+    } catch (error) {
+      console.error("[Dashboard] Failed to check pause status:", error);
+      // Leave systemStatus as-is - don't downgrade to Degraded just
+      // because the pause check itself failed (e.g. no wallet connected).
+    }
+  };
 
   const loadData = async (role: string, wallet: string) => {
     try {
@@ -311,7 +337,12 @@ export default function AdminDashboard() {
         setCertificates(analyticsData.recentCertificates || []);
       }
 
-      setSystemStatus(analyticsResponse.ok ? "Operational" : "Degraded");
+      if (!analyticsResponse.ok) {
+        setSystemStatus("Degraded");
+      }
+      // If analytics succeeded, leave systemStatus for checkPauseStatus()
+      // to set based on the real on-chain state, rather than overwriting
+      // it back to "Operational" here.
     } catch (error) {
       console.error("[Dashboard] Error loading data:", error);
       setSystemStatus("Degraded");
@@ -431,7 +462,11 @@ export default function AdminDashboard() {
                 <BarChart3 className="h-5 w-5 text-primary" />
                 System Status
               </CardTitle>
-              <div className={`text-2xl font-bold ${systemStatus === "Operational" ? "text-green-600" : "text-red-600"}`}>
+              <div className={`text-2xl font-bold ${
+                systemStatus === "Operational" ? "text-green-600" :
+                systemStatus === "Paused" ? "text-red-600" :
+                "text-orange-500"
+              }`}>
                 {systemStatus}
               </div>
             </CardHeader>

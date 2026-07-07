@@ -38,7 +38,7 @@ export function formatOrdinalDate(date: string): string {
 export function getCertificateStatusColor(status: string): string {
   switch (status) {
     case "valid":
-      return "text-primary bg-accent";
+      return "text-green-700 bg-green-50";
     case "revoked":
       return "text-red-600 bg-red-50";
     default:
@@ -115,4 +115,22 @@ export function canonicalCertificatePayload(fields: {
  */
 export function canonicalHolderPayload(fullName: string, dateOfBirth: string) {
   return `${fullName.trim().toUpperCase()}|${dateOfBirth}`;
+}
+
+/**
+ * Holder identity payload using matriculation number instead of date of
+ * birth. Used for the Holder Portal lookup going forward - a
+ * matriculation number is a far less guessable identifier than a date
+ * of birth (which has a narrow, often-public range and is commonly
+ * shared casually), making it a more private lookup key while still
+ * being something every student knows by heart.
+ *
+ * NOTE: this produces a DIFFERENT hash than canonicalHolderPayload()
+ * above. Certificates issued before this change have their
+ * holderIdentityHash computed from name+DOB and will not be findable
+ * via this new lookup - this is an accepted, deliberate trade-off made
+ * to improve privacy for all future issuances.
+ */
+export function canonicalHolderPayloadByMatric(fullName: string, matriculationNumber: string) {
+  return `${fullName.trim().toUpperCase()}|${matriculationNumber.trim().toUpperCase()}`;
 }

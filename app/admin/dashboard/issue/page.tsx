@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
   canonicalCertificatePayload,
-  canonicalHolderPayload,
+  canonicalHolderPayloadByMatric,
   certificateCategories,
   degreeClasses,
   NAUB_VICE_CHANCELLOR_NAME,
@@ -91,7 +91,7 @@ export default function IssueCertificatePage() {
       canonicalCertificatePayload({ ...formData, viceChancellor: NAUB_VICE_CHANCELLOR_NAME }),
     );
     const holderIdentityHash = await sha256Hex(
-      canonicalHolderPayload(formData.studentName, formData.dateOfBirth),
+      canonicalHolderPayloadByMatric(formData.studentName, formData.matriculationNumber),
     );
     const hashes = { certificateHash, holderIdentityHash };
     setHashPreview(hashes);
@@ -295,7 +295,7 @@ export default function IssueCertificatePage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="matriculationNumber">Matriculation Number *</Label>
-                  <Input id="matriculationNumber" placeholder="NAUB/UG/2020/0001" value={formData.matriculationNumber} onChange={(e) => handleChange("matriculationNumber", e.target.value)} required />
+                  <Input id="matriculationNumber" placeholder="COS/23U/3930" value={formData.matriculationNumber} onChange={(e) => handleChange("matriculationNumber", e.target.value)} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="dateOfBirth">Date of Birth *</Label>
