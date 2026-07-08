@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { database } from "@/lib/database";
 import { blockchain } from "@/lib/blockchain";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitByIpAndWallet, getClientIp } from "@/lib/rate-limit";
 import { isValidReason, isValidTxHash, isValidBlockNumber, sanitizeString } from "@/lib/validation";
 
 export async function POST(
@@ -10,19 +10,27 @@ export async function POST(
 ) {
   try {
     const ip = getClientIp(request);
+    const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const { reason, onChainTransactionHash, onChainBlockNumber, revokedBy } = body;
 
-    // Up to 30 revocations per hour per IP - same bound as issuance.
-    const rateLimit = await checkRateLimit(`revoke:${ip}`, 30, 60 * 60 * 1000);
+    // Up to 30 revocations per hour, checked against BOTH IP and wallet
+    // address, for the same reason as the issuance route: an IP-only
+    // limit is bypassed by rotating IPs, while a wallet address cannot be
+    // rotated without a different private key.
+    const rateLimit = await checkRateLimitByIpAndWallet(
+      "revoke",
+      ip,
+      typeof revokedBy === "string" ? revokedBy : null,
+      30,
+      60 * 60 * 1000,
+    );
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: "Too many revocation requests from this connection. Please wait a while and try again." },
+        { error: "Too many revocation requests. Please wait a while and try again." },
         { status: 429 },
       );
     }
-
-    const { id } = await params;
-    const body = await request.json().catch(() => ({}));
-    const { reason, onChainTransactionHash, onChainBlockNumber } = body;
 
     // FR-09: a revocation reason is mandatory. The smart contract already
     // enforces this on-chain (EmptyRevocationReason), but the API must not

@@ -28,6 +28,7 @@ export interface CertificateDocument extends Document {
   blockchainHash: string;
   transactionHash: string;
   blockNumber: number;
+  issuedBy?: string;
   revocationTxHash?: string;
   revocationBlockNumber?: number;
   revokedAt?: string;
@@ -38,19 +39,23 @@ const CertificateSchema = new Schema<CertificateDocument>(
   {
     id: { type: String, required: true, unique: true, index: true },
     studentName: { type: String, required: true },
-    matriculationNumber: { type: String, required: true },
+    // Indexed: checked on every issuance (duplicate-identifier check) and
+    // used to scope a Registry Admin's own certificate list.
+    matriculationNumber: { type: String, required: true, index: true },
     dateOfBirth: { type: String, required: true },
     programmeOfStudy: { type: String, required: true },
     classOfDegree: { type: String, required: true },
     dateOfAward: { type: String, required: true },
-    certificateNumber: { type: String, required: true },
+    // Indexed: checked on every issuance (duplicate-identifier check) and
+    // used for direct certificate-number lookup on the verify page.
+    certificateNumber: { type: String, required: true, index: true },
     viceChancellor: { type: String, required: true },
     holderIdentityHash: { type: String, required: true, index: true },
     ipfsCid: { type: String, required: true },
     institutionName: { type: String, required: true },
     certificateType: { type: String, required: true },
     dateIssued: { type: String, required: true },
-    status: { type: String, enum: ["valid", "revoked"], required: true, default: "valid" },
+    status: { type: String, enum: ["valid", "revoked"], required: true, default: "valid", index: true },
     blockchainHash: { type: String, required: true, index: true },
     transactionHash: { type: String, required: true },
     blockNumber: { type: Number, required: true },

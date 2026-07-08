@@ -133,6 +133,7 @@ export default function CertificateDetailPage() {
           reason: revocationReason.trim(),
           onChainTransactionHash,
           onChainBlockNumber,
+          revokedBy: sessionStorage.getItem("naub_wallet") || undefined,
         }),
       });
 

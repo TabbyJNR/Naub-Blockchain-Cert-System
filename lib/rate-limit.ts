@@ -71,3 +71,37 @@ export function getClientIp(request: Request): string {
   if (realIp) return realIp.trim();
   return "unknown";
 }
+
+/**
+ * Checks rate limits keyed on BOTH the caller's IP address and their wallet
+ * address, and returns "not allowed" if either limit is exceeded.
+ *
+ * IP-only limiting is trivially bypassed by rotating through a VPN or proxy
+ * pool, since a new IP resets the counter. Wallet-based limiting closes
+ * that gap for authenticated admin actions: a wallet address cannot be
+ * rotated the way an IP can, since it is cryptographically tied to the
+ * private key the caller must sign transactions with. Both checks run so
+ * that an attacker must evade IP AND wallet limits simultaneously, not
+ * just one or the other.
+ */
+export async function checkRateLimitByIpAndWallet(
+  routeName: string,
+  ip: string,
+  walletAddress: string | null | undefined,
+  maxRequests: number,
+  windowMs: number,
+): Promise<RateLimitResult> {
+  const ipResult = await checkRateLimit(`${routeName}:ip:${ip}`, maxRequests, windowMs);
+  if (!ipResult.allowed) return ipResult;
+
+  if (walletAddress) {
+    const walletResult = await checkRateLimit(
+      `${routeName}:wallet:${walletAddress.toLowerCase()}`,
+      maxRequests,
+      windowMs,
+    );
+    if (!walletResult.allowed) return walletResult;
+  }
+
+  return ipResult;
+}

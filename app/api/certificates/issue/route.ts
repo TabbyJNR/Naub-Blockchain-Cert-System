@@ -4,7 +4,7 @@ import { blockchain } from "@/lib/blockchain";
 import { generateCertificateId, canonicalCertificatePayload, canonicalHolderPayloadByMatric, NAUB_VICE_CHANCELLOR_NAME } from "@/lib/certificate-utils";
 import type { Certificate } from "@/lib/database";
 import crypto from "crypto";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimitByIpAndWallet, getClientIp } from "@/lib/rate-limit";
 import { generateCertificatePdf } from "@/lib/certificate-pdf";
 import { uploadToIpfs } from "@/lib/ipfs";
 import { sendCertificateIssuanceEmail } from "@/lib/email";
@@ -21,17 +21,6 @@ import {
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
-
-    // Up to 30 issuance attempts per hour per IP. Generous enough for
-    // genuine batch-issuance sessions, tight enough to block spam/abuse.
-    const rateLimit = await checkRateLimit(`issue:${ip}`, 30, 60 * 60 * 1000);
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        { error: "Too many issuance requests from this connection. Please wait a while and try again." },
-        { status: 429 },
-      );
-    }
-
     const body = await request.json().catch(() => ({}));
     const {
       studentName,
@@ -55,6 +44,24 @@ export async function POST(request: Request) {
     // Vice Chancellor is a fixed institutional constant - not submitted
     // from the form, so it is always consistent across all certificates.
     const viceChancellor = NAUB_VICE_CHANCELLOR_NAME;
+
+    // Up to 30 issuance attempts per hour, checked against BOTH the caller's
+    // IP and their wallet address. Checking both closes the gap where an
+    // attacker rotates IPs (e.g. via VPN) to bypass an IP-only limit; the
+    // wallet address cannot be rotated without a different private key.
+    const rateLimit = await checkRateLimitByIpAndWallet(
+      "issue",
+      ip,
+      typeof issuedBy === "string" ? issuedBy : null,
+      30,
+      60 * 60 * 1000,
+    );
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many issuance requests. Please wait a while and try again." },
+        { status: 429 },
+      );
+    }
 
     // ---- Input validation -------------------------------------------------
     // Every field here can end up hashed and permanently anchored on the
