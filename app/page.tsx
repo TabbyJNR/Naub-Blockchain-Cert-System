@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { NaubBrand } from "@/components/naub-brand";
+import { ScrollReveal } from "@/components/scroll-reveal";
 import {
   Database,
   FileCheck,
@@ -46,8 +47,17 @@ export default function HomePage() {
       <main>
 
         {/* Hero - reduced size, tight centered layout */}
-        <section className="container mx-auto px-4 py-10 lg:py-16">
-          <div className="mx-auto max-w-2xl space-y-5 text-center">
+        <section className="relative container mx-auto overflow-hidden px-4 py-10 lg:py-16">
+          {/* Ambient drifting background blobs - decorative, low-opacity, ignored by screen readers */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+          >
+            <div className="animate-drift-a absolute -top-24 left-[10%] h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+            <div className="animate-drift-b absolute -bottom-16 right-[8%] h-80 w-80 rounded-full bg-primary/[0.07] blur-3xl" />
+          </div>
+
+          <div className="mx-auto max-w-2xl animate-in fade-in slide-in-from-bottom-4 space-y-5 text-center duration-700">
             <h2 className="text-balance text-3xl font-black leading-tight tracking-tight text-foreground md:text-4xl">
               Blockchain certificate management for trustworthy NAUB degree verification.
             </h2>
@@ -81,77 +91,91 @@ export default function HomePage() {
 
         {/* Feature cards */}
         <section className="container mx-auto grid gap-6 px-4 py-10 md:grid-cols-3">
-          <Card className="border-primary/15">
-            <CardHeader>
-              <GraduationCap className="mb-3 h-10 w-10 text-primary" />
-              <CardTitle>Academic certificate fields</CardTitle>
-              <CardDescription>
-                Captures all eight required fields: student name, matriculation number,
-                date of birth, programme of study, class of degree, date of award,
-                certificate number, and Vice Chancellor - matching the official NAUB
-                Statement of Result format.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          <Card className="border-primary/15">
-            <CardHeader>
-              <Database className="mb-3 h-10 w-10 text-primary" />
-              <CardTitle>On-chain / off-chain split</CardTitle>
-              <CardDescription>
-                Only SHA-256 hashes and the IPFS document CID are anchored on-chain.
-                Personal data lives in MongoDB and can be permanently erased under NDPR
-                Article 3.1(6) without affecting the immutable on-chain record.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          <Card className="border-primary/15">
-            <CardHeader>
-              <QrCode className="mb-3 h-10 w-10 text-primary" />
-              <CardTitle>Independent verification</CardTitle>
-              <CardDescription>
-                Employers and institutions verify without accounts, payment, or registry
-                letters - results come directly from the Ethereum Sepolia blockchain via
-                a QR-linked verification URL or a direct hash / certificate ID lookup.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          <ScrollReveal delayMs={0}>
+            <Card className="group h-full border-primary/15 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
+              <CardHeader>
+                <GraduationCap className="mb-3 h-10 w-10 text-primary transition-transform duration-300 ease-out group-hover:scale-110 group-hover:-rotate-3" />
+                <CardTitle>Academic certificate fields</CardTitle>
+                <CardDescription>
+                  Captures all eight required fields: student name, matriculation number,
+                  date of birth, programme of study, class of degree, date of award,
+                  certificate number, and Vice Chancellor - matching the official NAUB
+                  Statement of Result format.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </ScrollReveal>
+          <ScrollReveal delayMs={120}>
+            <Card className="group h-full border-primary/15 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
+              <CardHeader>
+                <Database className="mb-3 h-10 w-10 text-primary transition-transform duration-300 ease-out group-hover:scale-110 group-hover:-rotate-3" />
+                <CardTitle>On-chain / off-chain split</CardTitle>
+                <CardDescription>
+                  Only SHA-256 hashes and the IPFS document CID are anchored on-chain.
+                  Personal data lives in MongoDB and can be permanently erased under NDPR
+                  Article 3.1(6) without affecting the immutable on-chain record.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </ScrollReveal>
+          <ScrollReveal delayMs={240}>
+            <Card className="group h-full border-primary/15 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
+              <CardHeader>
+                <QrCode className="mb-3 h-10 w-10 text-primary transition-transform duration-300 ease-out group-hover:scale-110 group-hover:-rotate-3" />
+                <CardTitle>Independent verification</CardTitle>
+                <CardDescription>
+                  Employers and institutions verify without accounts, payment, or registry
+                  letters - results come directly from the Ethereum Sepolia blockchain via
+                  a QR-linked verification URL or a direct hash / certificate ID lookup.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </ScrollReveal>
         </section>
 
         {/* Stats banner */}
         <section className="container mx-auto px-4 py-10">
           <div className="overflow-hidden rounded-2xl bg-secondary text-secondary-foreground">
             <div className="grid gap-6 p-8 md:grid-cols-4 md:p-10">
-              <div>
-                <KeyRound className="mb-3 h-7 w-7 text-primary" />
-                <div className="text-2xl font-black">RBAC</div>
-                <p className="mt-1 text-sm text-secondary-foreground/75">
-                  Super Admin and Registry Admin authority boundaries enforced by the
-                  smart contract's AccessControl roles
-                </p>
-              </div>
-              <div>
-                <FileCheck className="mb-3 h-7 w-7 text-primary" />
-                <div className="text-2xl font-black">SHA-256</div>
-                <p className="mt-1 text-sm text-secondary-foreground/75">
-                  Canonical certificate and holder identity hashes computed client-side
-                  via the Web Crypto API before any data leaves the browser
-                </p>
-              </div>
-              <div>
-                <Shield className="mb-3 h-7 w-7 text-primary" />
-                <div className="text-2xl font-black">IPFS</div>
-                <p className="mt-1 text-sm text-secondary-foreground/75">
-                  Certificate PDFs are generated and pinned to IPFS via Pinata at
-                  issuance - the CID is anchored on-chain for permanent document proof
-                </p>
-              </div>
-              <div>
-                <Search className="mb-3 h-7 w-7 text-primary" />
-                <div className="text-2xl font-black">~2s</div>
-                <p className="mt-1 text-sm text-secondary-foreground/75">
-                  Average public verification response time under typical conditions
-                </p>
-              </div>
+              <ScrollReveal delayMs={0}>
+                <div className="group">
+                  <KeyRound className="mb-3 h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
+                  <div className="text-2xl font-black transition-transform duration-300 group-hover:scale-105">RBAC</div>
+                  <p className="mt-1 text-sm text-secondary-foreground/75">
+                    Super Admin and Registry Admin authority boundaries enforced by the
+                    smart contract's AccessControl roles
+                  </p>
+                </div>
+              </ScrollReveal>
+              <ScrollReveal delayMs={100}>
+                <div className="group">
+                  <FileCheck className="mb-3 h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
+                  <div className="text-2xl font-black transition-transform duration-300 group-hover:scale-105">SHA-256</div>
+                  <p className="mt-1 text-sm text-secondary-foreground/75">
+                    Canonical certificate and holder identity hashes computed client-side
+                    via the Web Crypto API before any data leaves the browser
+                  </p>
+                </div>
+              </ScrollReveal>
+              <ScrollReveal delayMs={200}>
+                <div className="group">
+                  <Shield className="mb-3 h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
+                  <div className="text-2xl font-black transition-transform duration-300 group-hover:scale-105">IPFS</div>
+                  <p className="mt-1 text-sm text-secondary-foreground/75">
+                    Certificate PDFs are generated and pinned to IPFS via Pinata at
+                    issuance - the CID is anchored on-chain for permanent document proof
+                  </p>
+                </div>
+              </ScrollReveal>
+              <ScrollReveal delayMs={300}>
+                <div className="group">
+                  <Search className="mb-3 h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
+                  <div className="text-2xl font-black transition-transform duration-300 group-hover:scale-105">~2s</div>
+                  <p className="mt-1 text-sm text-secondary-foreground/75">
+                    Average public verification response time under typical conditions
+                  </p>
+                </div>
+              </ScrollReveal>
             </div>
           </div>
         </section>

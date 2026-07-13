@@ -130,3 +130,27 @@
     background: oklch(0.35 0.11 38 / 0.24);
   }
 }
+
+/* Slow, subtle drifting background blobs used behind the landing page hero.
+   Kept to low opacity and slow duration so it reads as ambient depth,
+   not a distracting animation. */
+@keyframes drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(3%, -4%) scale(1.08); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-4%, 3%) scale(1.05); }
+}
+.animate-drift-a {
+  animation: drift-a 14s ease-in-out infinite;
+}
+.animate-drift-b {
+  animation: drift-b 18s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-drift-a, .animate-drift-b {
+    animation: none;
+  }
+}
