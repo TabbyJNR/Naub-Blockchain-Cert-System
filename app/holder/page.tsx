@@ -170,9 +170,11 @@ export default function HolderPortalPage() {
         {/* No results */}
         {hasSearched && !isLoading && !error && certificates.length === 0 && (
           <Card>
-            <CardContent className="py-10 text-center text-muted-foreground">
-              <XCircle className="mx-auto mb-3 h-10 w-10 opacity-40" />
-              <p>No certificate records were found for that name and matriculation number.</p>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                <XCircle className="h-8 w-8 opacity-50" />
+              </div>
+              <p className="font-medium text-foreground">No certificate records found</p>
               <p className="mt-1 text-sm">
                 Check that the name and matriculation number exactly match what was registered
                 at NAUB.
@@ -184,7 +186,7 @@ export default function HolderPortalPage() {
         {/* Results */}
         <div className="space-y-6">
           {certificates.map((certificate) => (
-            <Card key={certificate.id} className="border-primary/15">
+            <Card key={certificate.id} className="border-primary/15 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
               <CardHeader>
                 <div className="flex items-start justify-between gap-3">
                   <div>

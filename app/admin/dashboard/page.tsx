@@ -29,6 +29,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   getRegistryContractAddress,
   grantCertificateRoleOnChain,
@@ -360,10 +361,44 @@ export default function AdminDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading dashboard...</p>
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <Skeleton className="h-10 w-48" />
+            <Skeleton className="h-9 w-24" />
+          </div>
+        </header>
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid md:grid-cols-3 gap-4 mb-8">
+            {[0, 1, 2].map((i) => (
+              <Card key={i}>
+                <CardHeader className="pb-3">
+                  <Skeleton className="h-4 w-32 mb-3" />
+                  <Skeleton className="h-8 w-16" />
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+          <div className="grid md:grid-cols-3 gap-4 mb-8">
+            {[0, 1, 2].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-4 w-36 mb-3" />
+                  <Skeleton className="h-6 w-20" />
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -392,11 +427,11 @@ export default function AdminDashboard() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Analytics Cards */}
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <Card>
+        <div className="grid md:grid-cols-3 gap-4 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <Card className="group transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
-                <FileCheck className="h-4 w-4" />
+                <FileCheck className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                 Total Certificates
               </CardDescription>
               <CardTitle className="text-3xl">
@@ -405,10 +440,10 @@ export default function AdminDashboard() {
             </CardHeader>
           </Card>
 
-          <Card>
+          <Card className="group transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-green-600" />
+                <Shield className="h-4 w-4 text-green-600 transition-transform duration-300 group-hover:scale-110" />
                 Valid
               </CardDescription>
               <CardTitle className="text-3xl text-green-600">
@@ -417,10 +452,10 @@ export default function AdminDashboard() {
             </CardHeader>
           </Card>
 
-          <Card>
+          <Card className="group transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertCircle className="h-4 w-4 text-red-600 transition-transform duration-300 group-hover:scale-110" />
                 Revoked
               </CardDescription>
               <CardTitle className="text-3xl text-red-600">
@@ -431,11 +466,11 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <Card>
+        <div className="grid md:grid-cols-3 gap-4 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150 fill-mode-both">
+          <Card className="group transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Activity className="h-5 w-5 text-primary" />
+                <Activity className="h-5 w-5 text-primary transition-transform duration-300 group-hover:scale-110" />
                 Total Verifications
               </CardTitle>
               <div className="text-2xl font-bold">
@@ -444,10 +479,10 @@ export default function AdminDashboard() {
             </CardHeader>
           </Card>
 
-          <Card>
+          <Card className="group transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
+                <Users className="h-5 w-5 text-primary transition-transform duration-300 group-hover:scale-110" />
                 Active Certificate Holders
               </CardTitle>
               <div className="text-2xl font-bold">
@@ -456,10 +491,10 @@ export default function AdminDashboard() {
             </CardHeader>
           </Card>
 
-          <Card>
+          <Card className="group transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
+                <BarChart3 className="h-5 w-5 text-primary transition-transform duration-300 group-hover:scale-110" />
                 System Status
               </CardTitle>
               <div className={`text-2xl font-bold ${
@@ -520,7 +555,7 @@ export default function AdminDashboard() {
                       .sort((a, b) => new Date(b.dateIssued).getTime() - new Date(a.dateIssued).getTime())
                       .slice(0, 5)
                       .map((cert) => (
-                        <tr key={cert.id} className="border-t hover:bg-muted/50">
+                        <tr key={cert.id} className="border-t transition-colors duration-200 hover:bg-primary/5 hover:border-l-2 hover:border-l-primary">
                           <td className="p-4 font-mono text-sm">{cert.id}</td>
                           <td className="p-4">{cert.studentName}</td>
                           <td className="p-4 text-sm text-muted-foreground">{cert.programmeOfStudy}</td>
@@ -550,9 +585,18 @@ export default function AdminDashboard() {
             </div>
 
             {certificates.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <FileCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No certificates issued yet.</p>
+              <div className="text-center py-16 text-muted-foreground">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                  <FileCheck className="h-8 w-8 text-primary/60" />
+                </div>
+                <p className="font-medium text-foreground">No certificates issued yet</p>
+                <p className="mt-1 text-sm">Certificates you issue will appear here once created.</p>
+                <Link href="/admin/dashboard/issue">
+                  <Button size="sm" className="mt-4 gap-2">
+                    <Plus className="h-4 w-4" />
+                    Issue your first certificate
+                  </Button>
+                </Link>
               </div>
             )}
 

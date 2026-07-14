@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft,
   Plus,
@@ -124,8 +125,23 @@ export default function CertificatesPage() {
 
             {/* Table */}
             {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-muted p-4 flex gap-6">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-4 flex-1" />
+                  ))}
+                </div>
+                <div className="divide-y">
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="p-4 flex gap-6 items-center">
+                      <Skeleton className="h-4 flex-1" />
+                      <Skeleton className="h-4 flex-1" />
+                      <Skeleton className="h-4 flex-1" />
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                      <Skeleton className="h-8 w-16" />
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="border rounded-lg overflow-hidden">
@@ -145,7 +161,7 @@ export default function CertificatesPage() {
                     </thead>
                     <tbody>
                       {filteredCertificates.map((cert) => (
-                        <tr key={cert.id} className="border-t hover:bg-muted/50">
+                        <tr key={cert.id} className="border-t transition-colors duration-200 hover:bg-primary/5 hover:border-l-2 hover:border-l-primary">
                           <td className="p-4 font-mono text-sm">{cert.id}</td>
                           <td className="p-4">{cert.studentName}</td>
                           <td className="p-4 text-sm text-muted-foreground">{cert.programmeOfStudy}</td>
@@ -177,9 +193,18 @@ export default function CertificatesPage() {
             )}
 
             {!isLoading && filteredCertificates.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <FileCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No certificates found</p>
+              <div className="text-center py-16 text-muted-foreground">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                  <FileCheck className="h-8 w-8 text-primary/60" />
+                </div>
+                <p className="font-medium text-foreground">
+                  {searchQuery ? "No matching certificates" : "No certificates found"}
+                </p>
+                <p className="mt-1 text-sm">
+                  {searchQuery
+                    ? `Nothing matches "${searchQuery}" - try a different name, ID, or certificate number.`
+                    : "Certificates will appear here once issued."}
+                </p>
               </div>
             )}
           </CardContent>

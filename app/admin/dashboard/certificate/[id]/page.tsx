@@ -376,7 +376,11 @@ export default function CertificateDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className="bg-white p-4 rounded-lg border-2 flex-shrink-0">
+                <div className="relative flex-shrink-0 rounded-xl bg-white p-5 shadow-sm ring-1 ring-primary/15">
+                  <div className="absolute -left-1 -top-1 h-4 w-4 rounded-tl-md border-l-2 border-t-2 border-primary/40" />
+                  <div className="absolute -right-1 -top-1 h-4 w-4 rounded-tr-md border-r-2 border-t-2 border-primary/40" />
+                  <div className="absolute -bottom-1 -left-1 h-4 w-4 rounded-bl-md border-b-2 border-l-2 border-primary/40" />
+                  <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-br-md border-b-2 border-r-2 border-primary/40" />
                   <QRCodeGenerator value={verificationUrl} size={200} />
                 </div>
                 <div className="flex-1 space-y-4">

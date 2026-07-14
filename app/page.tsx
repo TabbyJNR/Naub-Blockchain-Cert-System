@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { NaubBrand } from "@/components/naub-brand";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { HeroNetworkPattern } from "@/components/hero-network-pattern";
 import {
   Database,
   FileCheck,
@@ -53,6 +54,7 @@ export default function HomePage() {
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
           >
+            <HeroNetworkPattern />
             <div className="animate-drift-a absolute -top-24 left-[10%] h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
             <div className="animate-drift-b absolute -bottom-16 right-[8%] h-80 w-80 rounded-full bg-primary/[0.07] blur-3xl" />
           </div>
