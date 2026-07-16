@@ -32,6 +32,7 @@ import {
 } from "@/lib/certificate-utils";
 import { getRegistryContractAddress, issueCertificateOnChain } from "@/lib/contract-client";
 import { NaubBrand } from "@/components/naub-brand";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import {
   ArrowLeft,
   CheckCircle,
@@ -277,6 +278,8 @@ export default function IssueCertificatePage() {
           <NaubBrand title="Issue New Certificate" subtitle="Registry Admin - Issue Certificate" />
         </div>
       </header>
+
+      <Breadcrumbs items={[{ label: "Issue Certificate" }]} />
 
       <div className="container mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-[1fr_340px]">
         <Card>

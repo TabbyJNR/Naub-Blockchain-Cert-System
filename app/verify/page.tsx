@@ -23,11 +23,17 @@ import {
   AlertCircle,
   ExternalLink,
   QrCode,
+  Database,
+  Lock,
+  Copy,
+  Check,
 } from "lucide-react";
 import { formatDate, getCertificateStatusColor } from "@/lib/certificate-utils";
 import { QRScanner } from "@/components/qr-scanner";
 import { NaubBrand } from "@/components/naub-brand";
 import { CertificateDisplayFormal } from "@/components/certificate-display-formal";
+import { ScrollReveal } from "@/components/scroll-reveal";
+import { InfoTooltip } from "@/components/info-tooltip";
 
 interface PublicCertificate {
   id: string;
@@ -51,6 +57,7 @@ export default function VerifyPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [copiedHash, setCopiedHash] = useState(false);
 
   useEffect(() => {
     const id = searchParams.get("id");
@@ -94,6 +101,13 @@ export default function VerifyPage() {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     verifyById(certificateId.trim());
+  };
+
+  const handleCopyHash = async () => {
+    if (!blockchainInfo?.certificateHash) return;
+    await navigator.clipboard.writeText(blockchainInfo.certificateHash);
+    setCopiedHash(true);
+    setTimeout(() => setCopiedHash(false), 2000);
   };
 
 
@@ -210,13 +224,24 @@ export default function VerifyPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">Certificate Hash</p>
-                      <div className="bg-muted p-3 rounded font-mono text-xs break-all">
-                        {blockchainInfo?.certificateHash}
+                      <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                        Certificate Hash
+                        <InfoTooltip text="A unique digital fingerprint created from this certificate's details using SHA-256, a one-way cryptographic function. It cannot be reversed to reveal personal information, and it changes completely if even one character of the certificate is altered." />
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-muted p-3 rounded font-mono text-xs break-all flex-1">
+                          {blockchainInfo?.certificateHash}
+                        </div>
+                        <Button variant="outline" size="icon" onClick={handleCopyHash} title="Copy certificate hash" className="flex-shrink-0">
+                          {copiedHash ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                        </Button>
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">Issuance Transaction</p>
+                      <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                        Issuance Transaction
+                        <InfoTooltip text="The unique identifier of the blockchain transaction that permanently recorded this certificate on Ethereum. Click 'View on Etherscan' below to see it on the public blockchain explorer." />
+                      </p>
                       <div className="bg-muted p-3 rounded font-mono text-xs break-all">
                         {blockchainInfo?.txHash}
                       </div>
@@ -239,7 +264,10 @@ export default function VerifyPage() {
                     )}
                     {certificate.ipfsCid && !certificate.ipfsCid.startsWith("ipfs://demo-") && (
                       <div>
-                        <p className="text-sm text-muted-foreground mb-1">Certificate Document (IPFS)</p>
+                        <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                          Certificate Document (IPFS)
+                          <InfoTooltip text="IPFS (InterPlanetary File System) stores the actual certificate PDF on a decentralised network rather than a single company's server, so the document stays permanently accessible even if NAUB's website is ever offline." />
+                        </p>
                         <div className="flex items-center gap-2">
                           <div className="bg-muted p-2 rounded font-mono text-xs break-all flex-1">
                             {certificate.ipfsCid}
@@ -297,42 +325,62 @@ export default function VerifyPage() {
 
         {/* Info Section (shown before any search) */}
         {!hasSearched && (
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
-            <Card>
-              <CardHeader>
-                <Shield className="h-10 w-10 text-primary mb-2" />
-                <CardTitle className="text-lg">Blockchain Secured</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Every certificate is cryptographically secured and recorded on the blockchain for permanent verification.
-                </p>
-              </CardContent>
-            </Card>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+            <ScrollReveal delayMs={0}>
+              <Card className="group h-full transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
+                <CardHeader>
+                  <Shield className="h-10 w-10 text-primary mb-2 transition-transform duration-300 group-hover:scale-110" />
+                  <CardTitle className="text-lg">Blockchain Secured</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Every certificate hash is anchored on the Ethereum Sepolia blockchain and independently verifiable on Etherscan.
+                  </p>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
 
-            <Card>
-              <CardHeader>
-                <CheckCircle className="h-10 w-10 text-green-600 mb-2" />
-                <CardTitle className="text-lg">Instant Verification</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Verify any certificate in seconds with real-time blockchain validation and status checking.
-                </p>
-              </CardContent>
-            </Card>
+            <ScrollReveal delayMs={100}>
+              <Card className="group h-full transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
+                <CardHeader>
+                  <CheckCircle className="h-10 w-10 text-green-600 mb-2 transition-transform duration-300 group-hover:scale-110" />
+                  <CardTitle className="text-lg">Instant Verification</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Results return in approximately two seconds, with no login, account, or payment required.
+                  </p>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
 
-            <Card>
-              <CardHeader>
-                <AlertCircle className="h-10 w-10 text-blue-600 mb-2" />
-                <CardTitle className="text-lg">Tamper-Proof</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Certificates cannot be forged or altered, ensuring complete trust in certificate holder credentials.
-                </p>
-              </CardContent>
-            </Card>
+            <ScrollReveal delayMs={200}>
+              <Card className="group h-full transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
+                <CardHeader>
+                  <Database className="h-10 w-10 text-blue-600 mb-2 transition-transform duration-300 group-hover:scale-110" />
+                  <CardTitle className="text-lg">IPFS Document Storage</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    The certificate PDF is pinned to IPFS via Pinata at issuance, giving it a permanent, tamper-evident document reference.
+                  </p>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
+
+            <ScrollReveal delayMs={300}>
+              <Card className="group h-full transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
+                <CardHeader>
+                  <Lock className="h-10 w-10 text-purple-600 mb-2 transition-transform duration-300 group-hover:scale-110" />
+                  <CardTitle className="text-lg">NDPR Compliant</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Personal data never touches the blockchain. Only cryptographic hashes are recorded, keeping the system compliant with Nigerian data protection law.
+                  </p>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
           </div>
         )}
       </div>
@@ -343,7 +391,7 @@ export default function VerifyPage() {
 
       <footer className="border-t mt-20">
         <div className="container mx-auto px-4 py-8 text-center text-sm text-muted-foreground">
-          <p>© 2025 Nigerian Army University Biu (NAUB)</p>
+          <p>© 2026 Nigerian Army University Biu (NAUB)</p>
           <p className="mt-2">For support or inquiries, contact support@naub.edu.ng</p>
         </div>
       </footer>

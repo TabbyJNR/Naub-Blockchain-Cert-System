@@ -24,6 +24,7 @@ import { formatDate, getCertificateStatusColor } from "@/lib/certificate-utils";
 import type { Certificate } from "@/lib/database";
 import { useRouter } from "next/navigation";
 import { NaubBrand } from "@/components/naub-brand";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
 export default function CertificatesPage() {
   const router = useRouter();
@@ -90,6 +91,8 @@ export default function CertificatesPage() {
           </div>
         </div>
       </header>
+
+      <Breadcrumbs items={[{ label: "Certificates" }]} />
 
       <div className="container mx-auto px-4 py-8">
         <Card>

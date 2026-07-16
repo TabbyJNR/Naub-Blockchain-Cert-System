@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { NaubBrand } from "@/components/naub-brand";
 import { canonicalHolderPayloadByMatric, formatDate, getCertificateStatusColor } from "@/lib/certificate-utils";
+import { InfoTooltip } from "@/components/info-tooltip";
 import {
   ArrowLeft,
   CheckCircle,
@@ -153,8 +154,9 @@ export default function HolderPortalPage() {
               </Button>
             </form>
             {identityHash && (
-              <p className="mt-4 break-all rounded bg-muted p-3 font-mono text-xs text-muted-foreground">
+              <p className="mt-4 flex flex-wrap items-center gap-1 break-all rounded bg-muted p-3 font-mono text-xs text-muted-foreground">
                 Holder identity hash: {identityHash}
+                <InfoTooltip text="A privacy-preserving fingerprint created from your name and matriculation number. It lets the system find your certificates without ever storing your name or matriculation number on the public blockchain." />
               </p>
             )}
           </CardContent>
@@ -238,7 +240,10 @@ export default function HolderPortalPage() {
 
                 {/* Hashes */}
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Certificate Hash (for verification)</p>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    Certificate Hash (for verification)
+                    <InfoTooltip text="A unique digital fingerprint of your certificate's details. Anyone can paste this on the public verification page to instantly confirm your certificate is genuine." />
+                  </p>
                   <div className="flex items-center gap-2">
                     <p className="flex-1 break-all rounded bg-muted p-2 font-mono text-xs">
                       {certificate.blockchainHash}

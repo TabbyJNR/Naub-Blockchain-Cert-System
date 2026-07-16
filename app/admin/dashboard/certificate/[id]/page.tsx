@@ -21,6 +21,8 @@ import {
   CheckCircle,
   Download,
   QrCode,
+  Copy,
+  Check,
 } from "lucide-react";
 import { formatDate, getCertificateStatusColor } from "@/lib/certificate-utils";
 import { getRegistryContractAddress, revokeCertificateOnChain } from "@/lib/contract-client";
@@ -29,6 +31,8 @@ import { useToast } from "@/hooks/use-toast";
 import { QRCodeGenerator } from "@/components/qr-code-generator";
 import { CertificateDisplayFormal } from "@/components/certificate-display-formal";
 import { NaubBrand } from "@/components/naub-brand";
+import { TypeToConfirm } from "@/components/type-to-confirm";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
 export default function CertificateDetailPage() {
   const params = useParams();
@@ -42,6 +46,8 @@ export default function CertificateDetailPage() {
   const [showErasureForm, setShowErasureForm] = useState(false);
   const [isErasing, setIsErasing] = useState(false);
   const [erasureMessage, setErasureMessage] = useState("");
+  const [copiedHash, setCopiedHash] = useState(false);
+  const [erasureConfirmed, setErasureConfirmed] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -204,6 +210,13 @@ export default function CertificateDetailPage() {
     }
   };
 
+  const handleCopyHash = async () => {
+    if (!certificate) return;
+    await navigator.clipboard.writeText(certificate.blockchainHash);
+    setCopiedHash(true);
+    setTimeout(() => setCopiedHash(false), 2000);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -253,6 +266,13 @@ export default function CertificateDetailPage() {
         </div>
       </header>
 
+      <Breadcrumbs
+        items={[
+          { label: "Certificates", href: "/admin/dashboard/certificates" },
+          { label: certificate.certificateNumber || certificate.id },
+        ]}
+      />
+
       <div className="container mx-auto px-4 py-8 max-w-5xl">
 
         {/* Status Banner */}
@@ -295,7 +315,12 @@ export default function CertificateDetailPage() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground">Certificate Hash</p>
-                <p className="font-mono text-xs break-all bg-muted p-2 rounded">{certificate.blockchainHash}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-mono text-xs break-all bg-muted p-2 rounded flex-1">{certificate.blockchainHash}</p>
+                  <Button variant="outline" size="icon" onClick={handleCopyHash} title="Copy certificate hash" className="flex-shrink-0">
+                    {copiedHash ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Issuance Transaction</p>
@@ -486,18 +511,23 @@ export default function CertificateDetailPage() {
                     {erasureMessage}
                   </div>
                 )}
+                <TypeToConfirm
+                  confirmWord="ERASE"
+                  onConfirmChange={setErasureConfirmed}
+                  disabled={isErasing}
+                />
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     className="border-orange-400 text-orange-700 hover:bg-orange-100 bg-transparent"
                     onClick={handleErasure}
-                    disabled={isErasing}
+                    disabled={isErasing || !erasureConfirmed}
                   >
                     {isErasing ? "Erasing..." : "Confirm Erasure"}
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => { setShowErasureForm(false); setErasureMessage(""); }}
+                    onClick={() => { setShowErasureForm(false); setErasureMessage(""); setErasureConfirmed(false); }}
                     disabled={isErasing}
                   >
                     Cancel

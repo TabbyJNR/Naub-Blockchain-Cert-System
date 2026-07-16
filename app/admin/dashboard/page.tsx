@@ -30,6 +30,8 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { TypeToConfirm } from "@/components/type-to-confirm";
 import {
   getRegistryContractAddress,
   grantCertificateRoleOnChain,
@@ -68,15 +70,15 @@ function AdminControlPanel() {
   const role =
     typeof window !== "undefined" ? sessionStorage.getItem("naub_role") : null;
   const isSuperAdmin = role === "superadmin";
+  const { toast } = useToast();
 
   const [contractAddress, setContractAddress] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState<boolean | null>(null);
   const [pauseLoading, setPauseLoading] = useState(false);
+  const [pauseConfirmed, setPauseConfirmed] = useState(false);
   const [newAdminWallet, setNewAdminWallet] = useState("");
   const [revokeAdminWallet, setRevokeAdminWallet] = useState("");
   const [roleLoading, setRoleLoading] = useState(false);
-  const [roleMessage, setRoleMessage] = useState("");
-  const [pauseMessage, setPauseMessage] = useState("");
 
   useEffect(() => {
     getRegistryContractAddress().then((addr) => {
@@ -88,22 +90,28 @@ function AdminControlPanel() {
   const handlePauseToggle = async () => {
     if (!contractAddress) return;
     setPauseLoading(true);
-    setPauseMessage("");
     try {
       if (isPaused) {
         await unpauseContractOnChain(contractAddress);
         setIsPaused(false);
-        setPauseMessage("System successfully unpaused. Certificate issuance and revocation are now enabled.");
+        toast({
+          title: "System unpaused",
+          description: "Certificate issuance and revocation are now enabled.",
+        });
       } else {
         await pauseContractOnChain(contractAddress);
         setIsPaused(true);
-        setPauseMessage("System successfully paused. Certificate issuance and revocation are now blocked on-chain.");
+        setPauseConfirmed(false);
+        toast({
+          title: "System paused",
+          description: "Certificate issuance and revocation are now blocked on-chain.",
+        });
       }
     } catch (err: any) {
       if (err?.message?.includes("rejected") || err?.code === 4001) {
-        setPauseMessage("Transaction rejected in MetaMask. No change was made.");
+        toast({ title: "Transaction rejected in MetaMask", description: "No change was made.", variant: "destructive" });
       } else {
-        setPauseMessage(`Failed: ${err?.message || "Unknown error"}`);
+        toast({ title: "Failed", description: err?.message || "Unknown error", variant: "destructive" });
       }
     } finally {
       setPauseLoading(false);
@@ -113,16 +121,18 @@ function AdminControlPanel() {
   const handleGrantRole = async () => {
     if (!contractAddress || !newAdminWallet.trim()) return;
     setRoleLoading(true);
-    setRoleMessage("");
     try {
       await grantCertificateRoleOnChain(contractAddress, newAdminWallet.trim());
-      setRoleMessage(`CERTIFICATE_ROLE granted to ${newAdminWallet.trim()}. They can now issue and revoke certificates.`);
+      toast({
+        title: "Role granted",
+        description: `CERTIFICATE_ROLE granted to ${newAdminWallet.trim()}. They can now issue and revoke certificates.`,
+      });
       setNewAdminWallet("");
     } catch (err: any) {
       if (err?.message?.includes("rejected") || err?.code === 4001) {
-        setRoleMessage("Transaction rejected in MetaMask.");
+        toast({ title: "Transaction rejected in MetaMask", variant: "destructive" });
       } else {
-        setRoleMessage(`Failed: ${err?.message || "Unknown error"}`);
+        toast({ title: "Failed", description: err?.message || "Unknown error", variant: "destructive" });
       }
     } finally {
       setRoleLoading(false);
@@ -132,16 +142,18 @@ function AdminControlPanel() {
   const handleRevokeRole = async () => {
     if (!contractAddress || !revokeAdminWallet.trim()) return;
     setRoleLoading(true);
-    setRoleMessage("");
     try {
       await revokeCertificateRoleOnChain(contractAddress, revokeAdminWallet.trim());
-      setRoleMessage(`CERTIFICATE_ROLE revoked from ${revokeAdminWallet.trim()}. They can no longer issue or revoke certificates.`);
+      toast({
+        title: "Role revoked",
+        description: `CERTIFICATE_ROLE revoked from ${revokeAdminWallet.trim()}. They can no longer issue or revoke certificates.`,
+      });
       setRevokeAdminWallet("");
     } catch (err: any) {
       if (err?.message?.includes("rejected") || err?.code === 4001) {
-        setRoleMessage("Transaction rejected in MetaMask.");
+        toast({ title: "Transaction rejected in MetaMask", variant: "destructive" });
       } else {
-        setRoleMessage(`Failed: ${err?.message || "Unknown error"}`);
+        toast({ title: "Failed", description: err?.message || "Unknown error", variant: "destructive" });
       }
     } finally {
       setRoleLoading(false);
@@ -182,13 +194,19 @@ function AdminControlPanel() {
                 ? "PAUSED - Issuance and revocation are currently blocked on-chain"
                 : "OPERATIONAL - Issuance and revocation are enabled"}
           </div>
-          {pauseMessage && (
-            <p className="text-sm text-muted-foreground">{pauseMessage}</p>
+          {/* Pausing blocks the entire system for every user, so it requires
+              typed confirmation. Unpausing is a recovery action and does not. */}
+          {!isPaused && isPaused !== null && (
+            <TypeToConfirm
+              confirmWord="PAUSE"
+              onConfirmChange={setPauseConfirmed}
+              disabled={pauseLoading}
+            />
           )}
           <Button
             variant={isPaused ? "default" : "destructive"}
             onClick={handlePauseToggle}
-            disabled={pauseLoading || isPaused === null || !contractAddress}
+            disabled={pauseLoading || isPaused === null || !contractAddress || (!isPaused && !pauseConfirmed)}
             className="w-full gap-2"
           >
             {pauseLoading
@@ -258,12 +276,6 @@ function AdminControlPanel() {
               </Button>
             </div>
           </div>
-
-          {roleMessage && (
-            <p className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-              {roleMessage}
-            </p>
-          )}
 
           {!contractAddress && (
             <p className="text-xs text-muted-foreground">

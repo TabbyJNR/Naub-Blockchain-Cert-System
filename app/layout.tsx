@@ -7,6 +7,7 @@ import "./globals.css";
 import { Suspense } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
   title: "NAUB Blockchain Certificate System",
@@ -31,8 +32,10 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
-          <Toaster />
+          <TooltipProvider>
+            <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+            <Toaster />
+          </TooltipProvider>
           <Analytics />
         </ThemeProvider>
       </body>
