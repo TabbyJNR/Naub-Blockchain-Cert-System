@@ -10,12 +10,12 @@ export function HeroNetworkPattern() {
   return (
     <svg
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 -z-20 h-full w-full text-primary"
+      className="pointer-events-none absolute inset-0 h-full w-full text-primary"
       viewBox="0 0 1200 600"
       preserveAspectRatio="xMidYMid slice"
       fill="none"
     >
-      <g opacity="0.06" stroke="currentColor" strokeWidth="1">
+      <g opacity="0.22" stroke="currentColor" strokeWidth="1.25">
         <line x1="80" y1="90" x2="260" y2="180" />
         <line x1="260" y1="180" x2="180" y2="340" />
         <line x1="260" y1="180" x2="460" y2="120" />
@@ -33,22 +33,22 @@ export function HeroNetworkPattern() {
         <line x1="40" y1="260" x2="180" y2="340" />
         <line x1="1020" y1="220" x2="1160" y2="340" />
       </g>
-      <g fill="currentColor" opacity="0.1">
-        <circle cx="80" cy="90" r="4" />
-        <circle cx="260" cy="180" r="5" />
-        <circle cx="180" cy="340" r="4" />
-        <circle cx="460" cy="120" r="4" />
-        <circle cx="620" cy="260" r="6" />
-        <circle cx="820" cy="160" r="4" />
-        <circle cx="1020" cy="220" r="5" />
-        <circle cx="1140" cy="100" r="4" />
-        <circle cx="700" cy="420" r="5" />
-        <circle cx="880" cy="480" r="4" />
-        <circle cx="1080" cy="420" r="4" />
-        <circle cx="360" cy="440" r="4" />
-        <circle cx="560" cy="460" r="4" />
-        <circle cx="40" cy="260" r="4" />
-        <circle cx="1160" cy="340" r="4" />
+      <g fill="currentColor" opacity="0.32">
+        <circle cx="80" cy="90" r="5" />
+        <circle cx="260" cy="180" r="6" />
+        <circle cx="180" cy="340" r="5" />
+        <circle cx="460" cy="120" r="5" />
+        <circle cx="620" cy="260" r="7" />
+        <circle cx="820" cy="160" r="5" />
+        <circle cx="1020" cy="220" r="6" />
+        <circle cx="1140" cy="100" r="5" />
+        <circle cx="700" cy="420" r="6" />
+        <circle cx="880" cy="480" r="5" />
+        <circle cx="1080" cy="420" r="5" />
+        <circle cx="360" cy="440" r="5" />
+        <circle cx="560" cy="460" r="5" />
+        <circle cx="40" cy="260" r="5" />
+        <circle cx="1160" cy="340" r="5" />
       </g>
     </svg>
   );

@@ -31,7 +31,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { TypeToConfirm } from "@/components/type-to-confirm";
 import {
   getRegistryContractAddress,
   grantCertificateRoleOnChain,
@@ -75,7 +74,6 @@ function AdminControlPanel() {
   const [contractAddress, setContractAddress] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState<boolean | null>(null);
   const [pauseLoading, setPauseLoading] = useState(false);
-  const [pauseConfirmed, setPauseConfirmed] = useState(false);
   const [newAdminWallet, setNewAdminWallet] = useState("");
   const [revokeAdminWallet, setRevokeAdminWallet] = useState("");
   const [roleLoading, setRoleLoading] = useState(false);
@@ -101,7 +99,6 @@ function AdminControlPanel() {
       } else {
         await pauseContractOnChain(contractAddress);
         setIsPaused(true);
-        setPauseConfirmed(false);
         toast({
           title: "System paused",
           description: "Certificate issuance and revocation are now blocked on-chain.",
@@ -194,19 +191,10 @@ function AdminControlPanel() {
                 ? "PAUSED - Issuance and revocation are currently blocked on-chain"
                 : "OPERATIONAL - Issuance and revocation are enabled"}
           </div>
-          {/* Pausing blocks the entire system for every user, so it requires
-              typed confirmation. Unpausing is a recovery action and does not. */}
-          {!isPaused && isPaused !== null && (
-            <TypeToConfirm
-              confirmWord="PAUSE"
-              onConfirmChange={setPauseConfirmed}
-              disabled={pauseLoading}
-            />
-          )}
           <Button
             variant={isPaused ? "default" : "destructive"}
             onClick={handlePauseToggle}
-            disabled={pauseLoading || isPaused === null || !contractAddress || (!isPaused && !pauseConfirmed)}
+            disabled={pauseLoading || isPaused === null || !contractAddress}
             className="w-full gap-2"
           >
             {pauseLoading
