@@ -27,6 +27,11 @@ import {
   UserPlus,
   UserMinus,
   KeyRound,
+  Bell,
+  X,
+  MapPin,
+  Monitor,
+  Clock,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,12 +64,238 @@ interface Analytics {
   registryAdminActivity: Record<string, { issued: number; lastActive: string }> | null;
 }
 
-/**
- * AdminControlPanel - Role Management and System Pause.
- * Only shown to wallets with SUPERADMIN_ROLE (stored as "superadmin"
- * in sessionStorage after login). Registry Admins ("admin" role) see
- * this section as read-only, showing current status only.
- */
+interface ForensicEntry {
+  _id: string;
+  hashSubmitted: string;
+  result: "VALID" | "REVOKED" | "NOT_FOUND";
+  flagged: boolean;
+  certificateId: string | null;
+  ipAddress: string;
+  city: string | null;
+  country: string | null;
+  isp: string | null;
+  browser: string | null;
+  deviceType: string | null;
+  operatingSystem: string | null;
+  timestamp: number;
+  acknowledged: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTIFICATION BELL + PANEL  (Super Admin only — FR-13, NFR-11)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function NotificationBell({ isSuperAdmin }: { isSuperAdmin: boolean }) {
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
+  const [alerts, setAlerts] = useState<ForensicEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Poll for unread count every 30 seconds
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [isSuperAdmin]);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await fetch("/api/admin/forensic-log?unread=true");
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch {
+      // fail silently
+    }
+  };
+
+  const openPanel = async () => {
+    setIsOpen(true);
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/admin/forensic-log?flagged=true&limit=20");
+      if (res.ok) {
+        const data = await res.json();
+        setAlerts(data.entries || []);
+      }
+      // Mark all as acknowledged
+      await fetch("/api/admin/forensic-log", { method: "PATCH" });
+      setUnreadCount(0);
+    } catch {
+      // fail silently
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isSuperAdmin) return null;
+
+  return (
+    <>
+      {/* Bell button */}
+      <div className="relative">
+        <Button
+          variant="outline"
+          size="icon"
+          className="relative bg-transparent"
+          onClick={openPanel}
+          title="Security Alerts"
+        >
+          <Bell className="h-4 w-4" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </Button>
+      </div>
+
+      {/* Slide-out panel */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setIsOpen(false)}
+          />
+
+          {/* Panel */}
+          <div className="relative z-10 w-full max-w-md bg-background border-l shadow-2xl flex flex-col h-full overflow-hidden">
+            {/* Panel header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b bg-card">
+              <div>
+                <h2 className="font-semibold text-base flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  Security Alerts
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Suspicious verification attempts detected by CIMAS
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Panel body */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {isLoading ? (
+                <div className="space-y-3">
+                  {[0, 1, 2].map((i) => (
+                    <Skeleton key={i} className="h-24 w-full rounded-lg" />
+                  ))}
+                </div>
+              ) : alerts.length === 0 ? (
+                <div className="text-center py-16 text-muted-foreground">
+                  <Shield className="h-10 w-10 mx-auto mb-3 text-green-500 opacity-60" />
+                  <p className="font-medium text-foreground">No suspicious activity</p>
+                  <p className="text-sm mt-1">
+                    All verification attempts have returned valid results.
+                  </p>
+                </div>
+              ) : (
+                alerts.map((alert) => (
+                  <AlertCard key={alert._id} alert={alert} />
+                ))
+              )}
+            </div>
+
+            {/* Panel footer */}
+            {alerts.length > 0 && (
+              <div className="border-t px-5 py-3 bg-card">
+                <p className="text-xs text-muted-foreground">
+                  Showing {alerts.length} most recent flagged attempts.
+                  Click any certificate link to view its full audit trail.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function AlertCard({ alert }: { alert: ForensicEntry }) {
+  const time = new Date(alert.timestamp).toLocaleString("en-GB", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Africa/Lagos",
+  });
+
+  const location = [alert.city, alert.country].filter(Boolean).join(", ") || "Unknown location";
+  const device = [alert.browser, alert.operatingSystem].filter(Boolean).join(" · ") || "Unknown device";
+
+  const isNotFound = alert.result === "NOT_FOUND";
+
+  return (
+    <div
+      className={`rounded-lg border p-3 text-sm space-y-2 ${
+        isNotFound
+          ? "border-red-200 bg-red-50"
+          : "border-amber-200 bg-amber-50"
+      }`}
+    >
+      {/* Result badge */}
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+            isNotFound
+              ? "bg-red-100 text-red-700 border border-red-300"
+              : "bg-amber-100 text-amber-700 border border-amber-300"
+          }`}
+        >
+          {isNotFound ? "⛔ NOT FOUND" : "⚠️ REVOKED"}
+        </span>
+        <span className="text-xs text-muted-foreground flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          {time}
+        </span>
+      </div>
+
+      {/* Location + device */}
+      <div className="space-y-1">
+        <p className="text-xs flex items-center gap-1 text-muted-foreground">
+          <MapPin className="h-3 w-3 flex-shrink-0" />
+          {location} · {alert.isp || "Unknown ISP"}
+        </p>
+        <p className="text-xs flex items-center gap-1 text-muted-foreground">
+          <Monitor className="h-3 w-3 flex-shrink-0" />
+          {device}
+        </p>
+        <p className="text-xs text-muted-foreground font-mono">
+          IP: {alert.ipAddress}
+        </p>
+      </div>
+
+      {/* Hash */}
+      <p className="text-[10px] font-mono text-muted-foreground break-all bg-white/60 rounded px-2 py-1 border">
+        {alert.hashSubmitted.slice(0, 30)}...
+      </p>
+
+      {/* Certificate link */}
+      {alert.certificateId && (
+        <Link
+          href={`/admin/dashboard/certificate/${alert.certificateId}`}
+          className="text-xs font-medium text-primary hover:underline block"
+        >
+          View Certificate Audit Trail →
+        </Link>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN CONTROL PANEL (unchanged)
+// ─────────────────────────────────────────────────────────────────────────────
+
 function AdminControlPanel() {
   const role =
     typeof window !== "undefined" ? sessionStorage.getItem("naub_role") : null;
@@ -92,17 +323,11 @@ function AdminControlPanel() {
       if (isPaused) {
         await unpauseContractOnChain(contractAddress);
         setIsPaused(false);
-        toast({
-          title: "System unpaused",
-          description: "Certificate issuance and revocation are now enabled.",
-        });
+        toast({ title: "System unpaused", description: "Certificate issuance and revocation are now enabled." });
       } else {
         await pauseContractOnChain(contractAddress);
         setIsPaused(true);
-        toast({
-          title: "System paused",
-          description: "Certificate issuance and revocation are now blocked on-chain.",
-        });
+        toast({ title: "System paused", description: "Certificate issuance and revocation are now blocked on-chain." });
       }
     } catch (err: any) {
       if (err?.message?.includes("rejected") || err?.code === 4001) {
@@ -120,10 +345,7 @@ function AdminControlPanel() {
     setRoleLoading(true);
     try {
       await grantCertificateRoleOnChain(contractAddress, newAdminWallet.trim());
-      toast({
-        title: "Role granted",
-        description: `CERTIFICATE_ROLE granted to ${newAdminWallet.trim()}. They can now issue and revoke certificates.`,
-      });
+      toast({ title: "Role granted", description: `CERTIFICATE_ROLE granted to ${newAdminWallet.trim()}.` });
       setNewAdminWallet("");
     } catch (err: any) {
       if (err?.message?.includes("rejected") || err?.code === 4001) {
@@ -141,10 +363,7 @@ function AdminControlPanel() {
     setRoleLoading(true);
     try {
       await revokeCertificateRoleOnChain(contractAddress, revokeAdminWallet.trim());
-      toast({
-        title: "Role revoked",
-        description: `CERTIFICATE_ROLE revoked from ${revokeAdminWallet.trim()}. They can no longer issue or revoke certificates.`,
-      });
+      toast({ title: "Role revoked", description: `CERTIFICATE_ROLE revoked from ${revokeAdminWallet.trim()}.` });
       setRevokeAdminWallet("");
     } catch (err: any) {
       if (err?.message?.includes("rejected") || err?.code === 4001) {
@@ -161,7 +380,6 @@ function AdminControlPanel() {
 
   return (
     <div className="mt-6 grid gap-6 md:grid-cols-2">
-
       {/* System Pause */}
       <Card className={isPaused ? "border-red-300" : "border-green-300"}>
         <CardHeader>
@@ -215,12 +433,11 @@ function AdminControlPanel() {
           </CardTitle>
           <CardDescription>
             Grant or revoke CERTIFICATE_ROLE on the CertificateRegistry contract.
-            Only SUPERADMIN_ROLE can manage roles. Each action requires a
-            MetaMask transaction and costs a small amount of Sepolia gas.
+            Only SUPERADMIN_ROLE can manage roles. Each action requires a MetaMask
+            transaction and costs a small amount of Sepolia gas.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Grant */}
           <div className="space-y-2">
             <p className="text-sm font-medium">Grant CERTIFICATE_ROLE</p>
             <div className="flex gap-2">
@@ -241,8 +458,6 @@ function AdminControlPanel() {
               </Button>
             </div>
           </div>
-
-          {/* Revoke */}
           <div className="space-y-2">
             <p className="text-sm font-medium">Revoke CERTIFICATE_ROLE</p>
             <div className="flex gap-2">
@@ -264,7 +479,6 @@ function AdminControlPanel() {
               </Button>
             </div>
           </div>
-
           {!contractAddress && (
             <p className="text-xs text-muted-foreground">
               Contract address not configured. Role management requires
@@ -277,15 +491,15 @@ function AdminControlPanel() {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN DASHBOARD
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function AdminDashboard() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [systemStatus, setSystemStatus] = useState<"Operational" | "Paused" | "Degraded">("Operational");
-  // Read session values into state on mount so they are never read
-  // directly inside JSX, which would cause a hydration mismatch between
-  // server-rendered HTML (where sessionStorage doesn't exist) and the
-  // client-rendered version.
   const [sessionRole, setSessionRole] = useState<string>("");
   const [sessionWallet, setSessionWallet] = useState<string>("");
   const router = useRouter();
@@ -297,20 +511,10 @@ export default function AdminDashboard() {
     setSessionWallet(wallet);
     loadData(role, wallet);
     checkPauseStatus();
-
-    // Poll the on-chain pause state every 30 seconds so the System Status
-    // tile stays live even if paused/unpaused from a different session.
     const interval = setInterval(checkPauseStatus, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  /**
-   * Checks the CertificateRegistry contract's live paused() state so the
-   * System Status tile reflects reality - not just whether the analytics
-   * API responded. This is a free view call, no gas or wallet needed.
-   * Polled again every 30 seconds so the tile updates live if a Super
-   * Admin pauses/unpauses the system from another session or tab.
-   */
   const checkPauseStatus = async () => {
     try {
       const contractAddress = await getRegistryContractAddress();
@@ -319,8 +523,6 @@ export default function AdminDashboard() {
       setSystemStatus((prev) => (prev === "Degraded" ? prev : paused ? "Paused" : "Operational"));
     } catch (error) {
       console.error("[Dashboard] Failed to check pause status:", error);
-      // Leave systemStatus as-is - don't downgrade to Degraded just
-      // because the pause check itself failed (e.g. no wallet connected).
     }
   };
 
@@ -329,21 +531,13 @@ export default function AdminDashboard() {
       const params = new URLSearchParams();
       if (role) params.set("role", role);
       if (wallet) params.set("wallet", wallet);
-
       const analyticsResponse = await fetch(`/api/admin/analytics?${params.toString()}`);
-
       if (analyticsResponse.ok) {
         const analyticsData = await analyticsResponse.json();
         setAnalytics(analyticsData);
         setCertificates(analyticsData.recentCertificates || []);
       }
-
-      if (!analyticsResponse.ok) {
-        setSystemStatus("Degraded");
-      }
-      // If analytics succeeded, leave systemStatus for checkPauseStatus()
-      // to set based on the real on-chain state, rather than overwriting
-      // it back to "Operational" here.
+      if (!analyticsResponse.ok) setSystemStatus("Degraded");
     } catch (error) {
       console.error("[Dashboard] Error loading data:", error);
       setSystemStatus("Degraded");
@@ -379,30 +573,12 @@ export default function AdminDashboard() {
               </Card>
             ))}
           </div>
-          <div className="grid md:grid-cols-3 gap-4 mb-8">
-            {[0, 1, 2].map((i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-4 w-36 mb-3" />
-                  <Skeleton className="h-6 w-20" />
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-48" />
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </CardContent>
-          </Card>
         </div>
       </div>
     );
   }
+
+  const isSuperAdmin = sessionRole === "superadmin";
 
   return (
     <div className="min-h-screen bg-background">
@@ -414,14 +590,18 @@ export default function AdminDashboard() {
               <NaubBrand subtitle="Registry Admin Dashboard" />
             </Link>
           </div>
-          <Button
-            variant="outline"
-            onClick={handleLogout}
-            className="gap-2 bg-transparent"
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Notification Bell — Super Admin only */}
+            <NotificationBell isSuperAdmin={isSuperAdmin} />
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="gap-2 bg-transparent"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -613,17 +793,16 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Registry Admin Activity - SuperAdmin only */}
+        {/* Registry Admin Activity */}
         {analytics?.registryAdminActivity && Object.keys(analytics.registryAdminActivity).length > 0 && (
-          <Card className="border-primary/15">
+          <Card className="border-primary/15 mt-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Users className="h-5 w-5 text-primary" />
                 Registry Admin Activity
               </CardTitle>
               <CardDescription>
-                Per-admin certificate issuance breakdown. Each row represents a wallet
-                that has issued at least one certificate through this system.
+                Per-admin certificate issuance breakdown.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -632,9 +811,7 @@ export default function AdminDashboard() {
                   <div key={wallet} className="flex items-center justify-between py-3">
                     <div>
                       <p className="font-mono text-xs text-muted-foreground break-all">{wallet}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Last active: {data.lastActive}
-                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Last active: {data.lastActive}</p>
                     </div>
                     <div className="text-right ml-4 flex-shrink-0">
                       <p className="text-2xl font-black text-primary">{data.issued}</p>
@@ -647,9 +824,8 @@ export default function AdminDashboard() {
           </Card>
         )}
 
-        {/* Role Management + System Pause - SuperAdmin only */}
+        {/* Role Management + System Pause */}
         <AdminControlPanel />
-
       </div>
     </div>
   );
