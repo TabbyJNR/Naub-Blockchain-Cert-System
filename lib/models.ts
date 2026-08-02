@@ -85,9 +85,79 @@ const VerificationSchema = new Schema<VerificationDocument>(
   { timestamps: true }
 );
 
+/**
+ * ForensicLog — Certificate Integrity Monitoring and Alert Service (CIMAS)
+ *
+ * Records every suspicious verification attempt against the system:
+ * - Attempts that return NOT_FOUND (hash does not exist on blockchain)
+ * - Attempts that return REVOKED (certificate has been cancelled)
+ * - All attempts for complete audit trail visibility
+ *
+ * Personal data is never stored here. Only the hash submitted, the result,
+ * network/device metadata, and a flag indicating whether the attempt was
+ * suspicious. This satisfies FR-13 (forensic logging requirement).
+ *
+ * Super Admin can view all flagged entries from the dashboard notification
+ * panel and the certificate audit trail view (FR-17).
+ */
+export interface ForensicLogDocument extends Document {
+  // The hash the verifier submitted - never contains PII
+  hashSubmitted: string;
+  // What the system returned for that hash
+  result: "VALID" | "REVOKED" | "NOT_FOUND";
+  // Whether this attempt is flagged as suspicious (NOT_FOUND or REVOKED)
+  flagged: boolean;
+  // Certificate ID if one was found (null for NOT_FOUND results)
+  certificateId: string | null;
+  // Network metadata captured from request headers
+  ipAddress: string;
+  // Geolocation resolved from IP (best-effort, may be null)
+  city: string | null;
+  country: string | null;
+  isp: string | null;
+  // Device/browser fingerprint from User-Agent header
+  browser: string | null;
+  deviceType: string | null;
+  operatingSystem: string | null;
+  // Raw User-Agent string for reference
+  userAgent: string | null;
+  // When the attempt occurred (Unix ms)
+  timestamp: number;
+  // Whether the Super Admin has acknowledged/read this alert
+  acknowledged: boolean;
+}
+
+const ForensicLogSchema = new Schema<ForensicLogDocument>(
+  {
+    hashSubmitted: { type: String, required: true, index: true },
+    result: {
+      type: String,
+      enum: ["VALID", "REVOKED", "NOT_FOUND"],
+      required: true,
+      index: true,
+    },
+    flagged: { type: Boolean, required: true, default: false, index: true },
+    certificateId: { type: String, default: null, index: true },
+    ipAddress: { type: String, required: true },
+    city: { type: String, default: null },
+    country: { type: String, default: null },
+    isp: { type: String, default: null },
+    browser: { type: String, default: null },
+    deviceType: { type: String, default: null },
+    operatingSystem: { type: String, default: null },
+    userAgent: { type: String, default: null },
+    timestamp: { type: Number, required: true, index: true },
+    acknowledged: { type: Boolean, default: false, index: true },
+  },
+  { timestamps: true }
+);
+
 // Avoid re-compiling the model on every hot reload / serverless invocation.
 export const CertificateModel: Model<CertificateDocument> =
   mongoose.models.Certificate || mongoose.model<CertificateDocument>("Certificate", CertificateSchema);
 
 export const VerificationModel: Model<VerificationDocument> =
   mongoose.models.Verification || mongoose.model<VerificationDocument>("Verification", VerificationSchema);
+
+export const ForensicLogModel: Model<ForensicLogDocument> =
+  mongoose.models.ForensicLog || mongoose.model<ForensicLogDocument>("ForensicLog", ForensicLogSchema);
