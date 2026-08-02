@@ -1,19 +1,18 @@
 /**
- * Certificate issuance notification email via Resend.
+ * Email notifications via Resend for the NAUB Blockchain Certificate System.
  *
- * Sent to the student's email address immediately after their certificate
- * is successfully issued and anchored on-chain. Contains everything the
- * graduate needs to verify, share, and download their certificate:
- * - The four printed certificate fields
- * - The certificate hash (for verification)
- * - The certificate number / Ref. No
- * - A direct verification link
- * - A link to the IPFS PDF (if available)
- * - Instructions on how to use each item
+ * Two email types are sent:
  *
- * Falls back gracefully (logs, does not throw) if RESEND_API_KEY is not
- * configured or the send fails - a notification failure must never block
- * or roll back a certificate that has already been anchored on-chain.
+ * 1. sendCertificateIssuanceEmail — sent to the student immediately after
+ *    their certificate is successfully issued and anchored on-chain.
+ *
+ * 2. sendTamperAlert — sent to the Super Admin immediately when a suspicious
+ *    verification attempt is detected (NOT_FOUND or REVOKED result).
+ *    Satisfies NFR-11: alert delivery within 60 seconds of detection.
+ *
+ * Both fall back gracefully (log, do not throw) if RESEND_API_KEY is not
+ * configured or the send fails — a notification failure must never block or
+ * roll back any certificate operation.
  */
 
 import type { Certificate } from "./database";
@@ -24,6 +23,16 @@ const BASE_URL =
   process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
     : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+const FROM_ADDRESS =
+  process.env.RESEND_FROM_ADDRESS || "NAUB Certificate System <onboarding@resend.dev>";
+
+// Super Admin email address — set in environment variables
+const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || "";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CERTIFICATE ISSUANCE EMAIL
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface SendCertificateEmailOptions {
   studentEmail: string;
@@ -203,8 +212,6 @@ export async function sendCertificateIssuanceEmail(
 </html>
   `.trim();
 
-  const fromAddress = process.env.RESEND_FROM_ADDRESS || "NAUB Certificate System <onboarding@resend.dev>";
-
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -213,7 +220,7 @@ export async function sendCertificateIssuanceEmail(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: fromAddress,
+        from: FROM_ADDRESS,
         to: [studentEmail],
         subject: `Your NAUB Degree Certificate - ${certificate.certificateNumber}`,
         html,
@@ -223,7 +230,7 @@ export async function sendCertificateIssuanceEmail(
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
       console.error(`[Email] Resend send failed (${response.status}):`, errorText);
-      if (fromAddress.includes("onboarding@resend.dev")) {
+      if (FROM_ADDRESS.includes("onboarding@resend.dev")) {
         console.error(
           "[Email] Using Resend's shared test sender (onboarding@resend.dev) only " +
           "delivers to the email address you signed up to Resend with. To send to " +
@@ -237,5 +244,218 @@ export async function sendCertificateIssuanceEmail(
     }
   } catch (error) {
     console.error("[Email] Failed to send certificate notification:", error);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TAMPER ALERT EMAIL  (NFR-11 — delivered within 60 seconds of detection)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface TamperAlertOptions {
+  hashSubmitted: string;
+  result: "NOT_FOUND" | "REVOKED";
+  ipAddress: string;
+  city: string | null;
+  country: string | null;
+  isp: string | null;
+  browser: string | null;
+  deviceType: string | null;
+  operatingSystem: string | null;
+  timestamp: number;
+  certificateId: string | null;
+}
+
+export async function sendTamperAlert(options: TamperAlertOptions): Promise<void> {
+  if (!RESEND_API_KEY) {
+    console.warn("[Email] RESEND_API_KEY not set - skipping tamper alert email");
+    return;
+  }
+  if (!SUPER_ADMIN_EMAIL) {
+    console.warn("[Email] SUPER_ADMIN_EMAIL not set - skipping tamper alert email");
+    return;
+  }
+
+  const {
+    hashSubmitted, result, ipAddress, city, country,
+    isp, browser, deviceType, operatingSystem,
+    timestamp, certificateId,
+  } = options;
+
+  const time = new Date(timestamp).toLocaleString("en-GB", {
+    dateStyle: "full", timeStyle: "long", timeZone: "Africa/Lagos",
+  });
+
+  const location = [city, country].filter(Boolean).join(", ") || "Unknown location";
+  const device = [browser, operatingSystem, deviceType].filter(Boolean).join(" · ") || "Unknown device";
+
+  const resultLabel = result === "NOT_FOUND"
+    ? "⛔ NOT FOUND — Certificate does not exist on blockchain"
+    : "⚠️ REVOKED — A revoked certificate was submitted for verification";
+
+  const resultColor = result === "NOT_FOUND" ? "#8B1A1A" : "#8B5E00";
+  const resultBg = result === "NOT_FOUND" ? "#FDE8E8" : "#FFF8E6";
+
+  const dashboardUrl = `${BASE_URL}/admin/dashboard`;
+  const certUrl = certificateId ? `${BASE_URL}/admin/dashboard/certificate/${certificateId}` : null;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>⚠️ Tamper Alert — NAUB Certificate System</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:24px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;max-width:600px;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#1B3A5C;padding:24px 32px;text-align:center;">
+              <p style="margin:0;font-size:11px;letter-spacing:2px;color:#AABBD4;text-transform:uppercase;">NAUB Blockchain Certificate System</p>
+              <h1 style="margin:8px 0 0;font-size:20px;color:#ffffff;font-weight:700;">
+                ⚠️ Suspicious Verification Alert
+              </h1>
+              <p style="margin:6px 0 0;font-size:12px;color:#AABBD4;">
+                Certificate Integrity Monitoring — CIMAS
+              </p>
+            </td>
+          </tr>
+
+          <!-- Alert Banner -->
+          <tr>
+            <td style="background:${resultBg};border-left:4px solid ${resultColor};padding:16px 24px;">
+              <p style="margin:0;font-size:13px;font-weight:bold;color:${resultColor};">${resultLabel}</p>
+              <p style="margin:4px 0 0;font-size:12px;color:#555;">
+                A suspicious certificate verification attempt was detected and logged.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Details -->
+          <tr>
+            <td style="padding:24px 32px;">
+              <p style="margin:0 0 16px;font-size:14px;font-weight:bold;color:#1B3A5C;">
+                Incident Details
+              </p>
+              <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #e0e0e0;border-radius:6px;font-size:13px;">
+                <tr style="background:#EEF2F8;">
+                  <td style="color:#555;width:40%;padding:10px 12px;">Time of Attempt</td>
+                  <td style="color:#1a1a1a;font-weight:bold;padding:10px 12px;">${time}</td>
+                </tr>
+                <tr>
+                  <td style="color:#555;padding:10px 12px;">Result Returned</td>
+                  <td style="color:${resultColor};font-weight:bold;padding:10px 12px;">${result}</td>
+                </tr>
+                <tr style="background:#EEF2F8;">
+                  <td style="color:#555;padding:10px 12px;">IP Address</td>
+                  <td style="color:#1a1a1a;font-family:monospace;padding:10px 12px;">${ipAddress}</td>
+                </tr>
+                <tr>
+                  <td style="color:#555;padding:10px 12px;">Location</td>
+                  <td style="color:#1a1a1a;padding:10px 12px;">${location}</td>
+                </tr>
+                <tr style="background:#EEF2F8;">
+                  <td style="color:#555;padding:10px 12px;">ISP / Network</td>
+                  <td style="color:#1a1a1a;padding:10px 12px;">${isp || "Unknown"}</td>
+                </tr>
+                <tr>
+                  <td style="color:#555;padding:10px 12px;">Device / Browser</td>
+                  <td style="color:#1a1a1a;padding:10px 12px;">${device}</td>
+                </tr>
+                <tr style="background:#EEF2F8;">
+                  <td style="color:#555;padding:10px 12px;">Hash Submitted</td>
+                  <td style="color:#1a1a1a;font-family:monospace;font-size:11px;word-break:break-all;padding:10px 12px;">${hashSubmitted}</td>
+                </tr>
+                ${certificateId ? `
+                <tr>
+                  <td style="color:#555;padding:10px 12px;">Certificate ID</td>
+                  <td style="color:#1a1a1a;font-family:monospace;font-size:11px;padding:10px 12px;">${certificateId}</td>
+                </tr>` : ""}
+              </table>
+
+              <!-- Actions -->
+              <p style="margin:24px 0 12px;font-size:14px;font-weight:bold;color:#1B3A5C;">
+                Recommended Actions
+              </p>
+              <table cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+                <tr>
+                  <td style="background:#1B3A5C;border-radius:6px;">
+                    <a href="${dashboardUrl}" style="display:inline-block;padding:10px 24px;font-size:13px;color:#ffffff;text-decoration:none;font-weight:bold;">
+                      Open Super Admin Dashboard →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              ${certUrl ? `
+              <table cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                <tr>
+                  <td style="background:#E6F4ED;border:1px solid #1E5C3A;border-radius:6px;">
+                    <a href="${certUrl}" style="display:inline-block;padding:10px 24px;font-size:13px;color:#1E5C3A;text-decoration:none;font-weight:bold;">
+                      View Certificate Audit Trail →
+                    </a>
+                  </td>
+                </tr>
+              </table>` : ""}
+
+              <p style="margin:16px 0 0;font-size:12px;color:#666;line-height:1.7;">
+                This incident has been automatically logged in the NAUB Forensic Log.
+                If you believe this represents a genuine forgery attempt, log in to the
+                Super Admin Panel to review the full audit trail and take appropriate action.
+                Evidence from this log can be submitted to the EFCC or ICPC if required.
+              </p>
+
+              <hr style="border:none;border-top:1px solid #eee;margin:20px 0;" />
+              <p style="margin:0;font-size:11px;color:#999;line-height:1.6;">
+                This alert was generated automatically by the NAUB Certificate Integrity
+                Monitoring and Alert Service (CIMAS). You are receiving this because your
+                address is registered as the Super Admin notification email.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#EEF2F8;padding:14px 32px;text-align:center;border-top:1px solid #e0e0e0;">
+              <p style="margin:0;font-size:11px;color:#999;">
+                © 2026 Nigerian Army University Biu (NAUB) · Blockchain Certificate System · CIMAS
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM_ADDRESS,
+        to: [SUPER_ADMIN_EMAIL],
+        subject: `⚠️ NAUB Certificate Alert: Suspicious ${result} attempt detected`,
+        html,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      console.error(`[Email] Tamper alert send failed (${response.status}):`, errorText);
+    } else {
+      const data = await response.json();
+      console.log(`[Email] Tamper alert sent to Super Admin. ID: ${data.id}`);
+    }
+  } catch (error) {
+    console.error("[Email] Failed to send tamper alert:", error);
   }
 }
