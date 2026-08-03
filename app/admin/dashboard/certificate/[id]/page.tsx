@@ -23,6 +23,10 @@ import {
   QrCode,
   Copy,
   Check,
+  Clock,
+  MapPin,
+  Monitor,
+  Activity,
 } from "lucide-react";
 import { formatDate, getCertificateStatusColor } from "@/lib/certificate-utils";
 import { getRegistryContractAddress, revokeCertificateOnChain } from "@/lib/contract-client";
@@ -30,9 +34,167 @@ import type { Certificate } from "@/lib/database";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeGenerator } from "@/components/qr-code-generator";
 import { CertificateDisplayFormal } from "@/components/certificate-display-formal";
+import { CertificateDownload } from "@/components/certificate-download";
 import { NaubBrand } from "@/components/naub-brand";
 import { TypeToConfirm } from "@/components/type-to-confirm";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+
+// ── ForensicLog entry type ─────────────────────────────────────────────────
+interface ForensicEntry {
+  _id: string;
+  hashSubmitted: string;
+  result: "VALID" | "REVOKED" | "NOT_FOUND";
+  flagged: boolean;
+  certificateId: string | null;
+  ipAddress: string;
+  city: string | null;
+  country: string | null;
+  isp: string | null;
+  browser: string | null;
+  deviceType: string | null;
+  operatingSystem: string | null;
+  timestamp: number;
+  acknowledged: boolean;
+}
+
+// ── Certificate Audit Trail Component (FR-17) ──────────────────────────────
+function CertificateAuditTrail({ certificateId }: { certificateId: string }) {
+  const [entries, setEntries] = useState<ForensicEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/admin/forensic-log?certificateId=${certificateId}&limit=100`)
+      .then((r) => r.json())
+      .then((data) => setEntries(data.entries || []))
+      .catch(() => setEntries([]))
+      .finally(() => setIsLoading(false));
+  }, [certificateId]);
+
+  const validCount = entries.filter((e) => e.result === "VALID").length;
+  const suspiciousCount = entries.filter((e) => e.flagged).length;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Certificate Audit Trail
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-12 bg-muted animate-pulse rounded-lg" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Activity className="h-5 w-5" />
+          Certificate Audit Trail
+        </CardTitle>
+        <CardDescription>
+          Complete verification history for this certificate — every attempt logged
+          by the Certificate Integrity Monitoring and Alert Service (CIMAS).
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+
+        {/* Summary row */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-lg border bg-muted/40 p-3 text-center">
+            <p className="text-2xl font-bold">{entries.length}</p>
+            <p className="text-xs text-muted-foreground">Total Attempts</p>
+          </div>
+          <div className="rounded-lg border bg-green-50 p-3 text-center">
+            <p className="text-2xl font-bold text-green-600">{validCount}</p>
+            <p className="text-xs text-muted-foreground">Valid Verifications</p>
+          </div>
+          <div className={`rounded-lg border p-3 text-center ${suspiciousCount > 0 ? "bg-red-50" : "bg-muted/40"}`}>
+            <p className={`text-2xl font-bold ${suspiciousCount > 0 ? "text-red-600" : "text-muted-foreground"}`}>
+              {suspiciousCount}
+            </p>
+            <p className="text-xs text-muted-foreground">Suspicious Attempts</p>
+          </div>
+        </div>
+
+        {/* Log entries */}
+        {entries.length === 0 ? (
+          <div className="text-center py-10 text-muted-foreground">
+            <Activity className="h-8 w-8 mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No verification attempts recorded yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+            {entries.map((entry) => (
+              <AuditEntry key={entry._id} entry={entry} />
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function AuditEntry({ entry }: { entry: ForensicEntry }) {
+  const time = new Date(entry.timestamp).toLocaleString("en-GB", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Africa/Lagos",
+  });
+
+  const location = [entry.city, entry.country].filter(Boolean).join(", ") || "Unknown";
+  const device = [entry.browser, entry.operatingSystem].filter(Boolean).join(" · ") || "Unknown device";
+
+  const resultColor =
+    entry.result === "VALID"
+      ? "text-green-600 bg-green-50 border-green-200"
+      : entry.result === "REVOKED"
+        ? "text-amber-600 bg-amber-50 border-amber-200"
+        : "text-red-600 bg-red-50 border-red-200";
+
+  const resultIcon =
+    entry.result === "VALID" ? "✓" :
+    entry.result === "REVOKED" ? "⚠" : "⛔";
+
+  return (
+    <div className={`rounded-lg border p-3 text-xs ${entry.flagged ? "border-red-200 bg-red-50/50" : "border-border bg-muted/20"}`}>
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <span className={`font-bold px-1.5 py-0.5 rounded border text-[10px] ${resultColor}`}>
+          {resultIcon} {entry.result}
+        </span>
+        <span className="text-muted-foreground flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          {time}
+        </span>
+      </div>
+      <div className="space-y-0.5 text-muted-foreground">
+        <p className="flex items-center gap-1">
+          <MapPin className="h-3 w-3 flex-shrink-0" />
+          {location} · {entry.isp || "Unknown ISP"} · IP: {entry.ipAddress}
+        </p>
+        <p className="flex items-center gap-1">
+          <Monitor className="h-3 w-3 flex-shrink-0" />
+          {device}
+        </p>
+      </div>
+      {entry.flagged && (
+        <p className="mt-1.5 text-[10px] font-semibold text-red-600">
+          ⚠ Flagged as suspicious — Super Admin was notified
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── Main Page ──────────────────────────────────────────────────────────────
 
 export default function CertificateDetailPage() {
   const params = useParams();
@@ -144,27 +306,16 @@ export default function CertificateDetailPage() {
       });
 
       if (response.ok) {
-        toast({
-          title: "Certificate Revoked",
-          description: "The certificate has been successfully revoked",
-        });
+        toast({ title: "Certificate Revoked", description: "The certificate has been successfully revoked" });
         setShowRevokeForm(false);
         setRevocationReason("");
         loadCertificate();
       } else {
         const data = await response.json().catch(() => ({}));
-        toast({
-          title: "Error",
-          description: data.error || "Failed to revoke certificate",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: data.error || "Failed to revoke certificate", variant: "destructive" });
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "An error occurred", variant: "destructive" });
     } finally {
       setIsRevoking(false);
       setRevokeStatusMessage(null);
@@ -197,31 +348,25 @@ export default function CertificateDetailPage() {
       });
       const data = await response.json();
       if (response.ok) {
-        setErasureMessage(
-          `✓ ${data.message || "Personal data erased successfully. The on-chain hash record remains."}`
-        );
+        setErasureMessage(`✓ ${data.message || "Personal data erased successfully."}`);
+        toast({ title: "Personal data erased", description: "NDPR Article 3.1(6) satisfied." });
+        loadCertificate();
       } else {
-        setErasureMessage(data.error || "Erasure failed. Please try again.");
+        setErasureMessage(data.error || "Erasure failed.");
+        toast({ title: "Erasure failed", description: data.error || "Unknown error", variant: "destructive" });
       }
     } catch {
-      setErasureMessage("An error occurred during erasure. Please try again.");
+      setErasureMessage("Network error during erasure.");
     } finally {
       setIsErasing(false);
     }
   };
 
-  const handleCopyHash = async () => {
-    if (!certificate) return;
-    await navigator.clipboard.writeText(certificate.blockchainHash);
-    setCopiedHash(true);
-    setTimeout(() => setCopiedHash(false), 2000);
-  };
-
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto mb-4" />
           <p className="text-muted-foreground">Loading certificate...</p>
         </div>
       </div>
@@ -230,102 +375,164 @@ export default function CertificateDetailPage() {
 
   if (!certificate) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Certificate Not Found</CardTitle>
-            <CardDescription>
-              The requested certificate could not be found
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4">
             <Link href="/admin/dashboard">
-              <Button>Return to Dashboard</Button>
+              <NaubBrand subtitle="Registry Admin Dashboard" />
             </Link>
-          </CardContent>
-        </Card>
+          </div>
+        </header>
+        <div className="container mx-auto px-4 py-16 text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Certificate Not Found</h2>
+          <p className="text-muted-foreground mb-6">
+            Certificate <code className="font-mono">{params.id as string}</code> could not be found.
+          </p>
+          <Link href="/admin/dashboard">
+            <Button variant="outline" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
-  const verificationUrl = `${
-    typeof window !== "undefined" ? window.location.origin : ""
-  }/verify?id=${certificate.id}`;
+  const verificationUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/verify?id=${certificate.id}`;
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/">
+            <NaubBrand subtitle="Registry Admin Dashboard" />
+          </Link>
           <Link href="/admin/dashboard">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
+            <Button variant="outline" className="gap-2 bg-transparent">
+              <ArrowLeft className="h-4 w-4" />
+              Dashboard
             </Button>
           </Link>
-          <NaubBrand subtitle="Certificate Details" />
         </div>
       </header>
 
-      <Breadcrumbs
-        items={[
-          { label: "Certificates", href: "/admin/dashboard/certificates" },
-          { label: certificate.certificateNumber || certificate.id },
-        ]}
-      />
-
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Breadcrumbs */}
+        <Breadcrumbs
+          items={[
+            { label: "Dashboard", href: "/admin/dashboard" },
+            { label: "Certificates", href: "/admin/dashboard/certificates" },
+            { label: certificate.certificateNumber },
+          ]}
+          className="mb-6"
+        />
 
         {/* Status Banner */}
+        {certificate.status === "revoked" && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-red-700">This certificate has been revoked</p>
+              {certificate.revocationReason && (
+                <p className="text-sm text-red-600 mt-1">Reason: {certificate.revocationReason}</p>
+              )}
+              {certificate.revokedAt && (
+                <p className="text-xs text-red-500 mt-1">
+                  Revoked: {new Date(certificate.revokedAt).toLocaleString()}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── 1. Certificate Details ── */}
         <div className="mb-6">
-          {certificate.status === "valid" && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <div>
-                <p className="font-semibold text-green-900">Certificate is Valid</p>
-                <p className="text-sm text-green-700">This certificate is active and verified on the blockchain</p>
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    {certificate.certificateNumber}
+                  </CardTitle>
+                  <CardDescription>
+                    {certificate.programmeOfStudy} · {certificate.institutionName}
+                  </CardDescription>
+                </div>
+                <Badge className={getCertificateStatusColor(certificate.status)}>
+                  {certificate.status}
+                </Badge>
               </div>
-            </div>
-          )}
-          {certificate.status === "revoked" && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-              <div>
-                <p className="font-semibold text-red-900">Certificate Revoked</p>
-                <p className="text-sm text-red-700">This certificate has been revoked and is no longer valid</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                {[
+                  ["Student Name", certificate.studentName],
+                  ["Matriculation Number", certificate.matriculationNumber],
+                  ["Date of Birth", certificate.dateOfBirth],
+                  ["Programme of Study", certificate.programmeOfStudy],
+                  ["Class of Degree", certificate.classOfDegree],
+                  ["Date of Award", formatDate(certificate.dateOfAward)],
+                  ["Vice Chancellor", certificate.viceChancellor],
+                  ["Date Issued", formatDate(certificate.dateIssued)],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <p className="text-muted-foreground">{label}</p>
+                    <p className="font-medium">{value}</p>
+                  </div>
+                ))}
               </div>
-            </div>
-          )}
+            </CardContent>
+          </Card>
         </div>
 
-        {/* ── 1. NAUB Certificate Output (top) ── */}
-        <div className="mb-8">
+        {/* ── 2. Formal Certificate Preview ── */}
+        <div className="mb-6">
           <CertificateDisplayFormal certificate={certificate} />
         </div>
 
-        {/* ── 2. Blockchain Verification ── */}
+        {/* ── 3. Blockchain Record ── */}
         <div className="mb-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                Blockchain Verification
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                Blockchain Record
               </CardTitle>
-              <p className="text-sm text-muted-foreground">Immutable record on the Ethereum Sepolia blockchain</p>
+              <CardDescription>
+                Permanently anchored on Ethereum Sepolia Testnet
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm text-muted-foreground">Certificate Hash</p>
-                <div className="flex items-center gap-2">
-                  <p className="font-mono text-xs break-all bg-muted p-2 rounded flex-1">{certificate.blockchainHash}</p>
-                  <Button variant="outline" size="icon" onClick={handleCopyHash} title="Copy certificate hash" className="flex-shrink-0">
+                <p className="text-sm text-muted-foreground">Certificate Hash (SHA-256)</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="font-mono text-xs break-all bg-muted p-2 rounded flex-1">
+                    {certificate.blockchainHash}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(certificate.blockchainHash);
+                      setCopiedHash(true);
+                      setTimeout(() => setCopiedHash(false), 2000);
+                    }}
+                  >
                     {copiedHash ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
+
               <div>
-                <p className="text-sm text-muted-foreground">Issuance Transaction</p>
-                <div className="flex items-center gap-2">
-                  <p className="font-mono text-xs break-all bg-muted p-2 rounded flex-1">{certificate.transactionHash}</p>
+                <p className="text-sm text-muted-foreground">Transaction Hash</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="font-mono text-xs break-all bg-muted p-2 rounded flex-1">
+                    {certificate.transactionHash}
+                  </p>
                   <a
                     href={`https://sepolia.etherscan.io/tx/${certificate.transactionHash}`}
                     target="_blank"
@@ -338,15 +545,14 @@ export default function CertificateDetailPage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Block: {certificate.blockNumber}</p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Holder Identity Hash (NDPR-safe)</p>
-                <p className="font-mono text-xs break-all bg-muted p-2 rounded">{certificate.holderIdentityHash}</p>
-              </div>
+
               {certificate.ipfsCid && !certificate.ipfsCid.startsWith("ipfs://demo-") && (
                 <div>
                   <p className="text-sm text-muted-foreground">Certificate Document (IPFS)</p>
-                  <div className="flex items-center gap-2">
-                    <p className="font-mono text-xs break-all bg-muted p-2 rounded flex-1">{certificate.ipfsCid}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="font-mono text-xs break-all bg-muted p-2 rounded flex-1">
+                      {certificate.ipfsCid}
+                    </p>
                     <a
                       href={`https://gateway.pinata.cloud/ipfs/${certificate.ipfsCid.replace("ipfs://", "")}`}
                       target="_blank"
@@ -359,11 +565,14 @@ export default function CertificateDetailPage() {
                   </div>
                 </div>
               )}
+
               {certificate.status === "revoked" && certificate.revocationTxHash && (
                 <div className="border-t pt-4">
                   <p className="text-sm text-muted-foreground">Revocation Transaction</p>
-                  <div className="flex items-center gap-2">
-                    <p className="font-mono text-xs break-all bg-red-50 p-2 rounded flex-1 border border-red-200">{certificate.revocationTxHash}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="font-mono text-xs break-all bg-red-50 p-2 rounded flex-1 border border-red-200">
+                      {certificate.revocationTxHash}
+                    </p>
                     <a
                       href={`https://sepolia.etherscan.io/tx/${certificate.revocationTxHash}`}
                       target="_blank"
@@ -387,7 +596,12 @@ export default function CertificateDetailPage() {
           </Card>
         </div>
 
-        {/* ── 4. QR Code Verification ── */}
+        {/* ── 4. Certificate Audit Trail (FR-17 — NEW) ── */}
+        <div className="mb-6">
+          <CertificateAuditTrail certificateId={certificate.id} />
+        </div>
+
+        {/* ── 5. QR Code ── */}
         <div className="mb-6">
           <Card>
             <CardHeader>
@@ -396,7 +610,7 @@ export default function CertificateDetailPage() {
                 QR Code Verification
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Scan to instantly verify this certificate - no login required
+                Scan to instantly verify this certificate — no login required
               </p>
             </CardHeader>
             <CardContent>
@@ -410,9 +624,9 @@ export default function CertificateDetailPage() {
                 </div>
                 <div className="flex-1 space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    Anyone - employers, NYSC, other institutions - can scan this QR code or visit
-                    the verification page to confirm this certificate's authenticity directly
-                    against the Ethereum Sepolia blockchain. No login or account required.
+                    Anyone — employers, NYSC, other institutions — can scan this QR code
+                    or visit the verification page to confirm this certificate's authenticity
+                    directly against the Ethereum Sepolia blockchain. No login or account required.
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -430,7 +644,7 @@ export default function CertificateDetailPage() {
           </Card>
         </div>
 
-        {/* ── 5. Actions (Revoke + NDPR Erasure) ── */}
+        {/* ── 6. Actions (Revoke + NDPR Erasure) ── */}
         <div className="space-y-4">
           <div className="flex flex-wrap gap-3">
             {certificate.status === "valid" && !showRevokeForm && !showErasureForm && (
@@ -493,7 +707,7 @@ export default function CertificateDetailPage() {
                 <p className="text-sm text-muted-foreground">
                   This permanently deletes all personal data (name, date of birth,
                   matriculation number) from the off-chain database. The on-chain
-                  hash record remains as an anonymous value - it cannot be erased
+                  hash record remains as an anonymous value — it cannot be erased
                   or modified.
                 </p>
               </CardHeader>
@@ -503,11 +717,14 @@ export default function CertificateDetailPage() {
                   erased, it cannot be recovered. The certificate will no longer be
                   retrievable via the Holder Portal by name and date of birth. The
                   certificate will continue to verify successfully on the public
-                  /verify page and on Etherscan, since the on-chain hash record is
-                  never modified.
+                  /verify page and on Etherscan.
                 </div>
                 {erasureMessage && (
-                  <div className={`rounded-lg p-3 text-sm ${erasureMessage.startsWith("✓") ? "bg-green-50 text-green-800 border border-green-200" : "bg-red-50 text-red-800 border border-red-200"}`}>
+                  <div className={`rounded-lg p-3 text-sm ${
+                    erasureMessage.startsWith("✓")
+                      ? "bg-green-50 text-green-800 border border-green-200"
+                      : "bg-red-50 text-red-800 border border-red-200"
+                  }`}>
                     {erasureMessage}
                   </div>
                 )}
@@ -537,7 +754,6 @@ export default function CertificateDetailPage() {
             </Card>
           )}
         </div>
-
       </div>
     </div>
   );
