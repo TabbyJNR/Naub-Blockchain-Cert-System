@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { database } from "@/lib/database";
 import { blockchain } from "@/lib/blockchain";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { ForensicLogModel } from "@/lib/models";
 import { sendTamperAlert } from "@/lib/email";
 import UAParser from "ua-parser-js";
@@ -230,10 +230,10 @@ interface LogPayload {
  * Used for NOT_FOUND and REVOKED results (suspicious attempts).
  */
 async function logAndAlert(payload: LogPayload): Promise<void> {
-  await connectDB();
+  await connectToDatabase();
   const geo = await resolveGeo(payload.ipAddress);
 
-  await ForensicLogModel.create({
+  const log = await ForensicLogModel.create({
     hashSubmitted: payload.hashSubmitted,
     result: payload.result,
     flagged: true,
@@ -246,32 +246,19 @@ async function logAndAlert(payload: LogPayload): Promise<void> {
     deviceType: payload.deviceType,
     operatingSystem: payload.operatingSystem,
     userAgent: payload.userAgent,
-    timestamp: Date.now(),
-    acknowledged: false,
   });
 
-  // Send email alert to Super Admin (NFR-11)
-  await sendTamperAlert({
-    hashSubmitted: payload.hashSubmitted,
-    result: payload.result as "NOT_FOUND" | "REVOKED",
-    ipAddress: payload.ipAddress,
-    city: geo.city,
-    country: geo.country,
-    isp: geo.isp,
-    browser: payload.browser,
-    deviceType: payload.deviceType,
-    operatingSystem: payload.operatingSystem,
-    timestamp: Date.now(),
-    certificateId: payload.certificateId,
-  });
+  // Trigger NFR-11: Email Alert
+  await sendTamperAlert(log).catch((err) =>
+    console.error("[ForensicLog] Failed to send email alert:", err)
+  );
 }
 
 /**
- * logOnly — saves an unflagged ForensicLog entry for VALID verifications.
- * Provides the complete verification history shown in the Certificate Audit Trail (FR-17).
+ * logOnly — saves an unflagged ForensicLog entry for clean audit trails.
  */
 async function logOnly(payload: LogPayload): Promise<void> {
-  await connectDB();
+  await connectToDatabase();
   const geo = await resolveGeo(payload.ipAddress);
 
   await ForensicLogModel.create({
@@ -287,7 +274,5 @@ async function logOnly(payload: LogPayload): Promise<void> {
     deviceType: payload.deviceType,
     operatingSystem: payload.operatingSystem,
     userAgent: payload.userAgent,
-    timestamp: Date.now(),
-    acknowledged: false,
   });
 }
