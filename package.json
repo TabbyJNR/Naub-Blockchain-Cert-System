@@ -10,9 +10,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "resend": "^4.0.0",
-    "pdf-lib": "^1.17.1",
-    "mongoose": "^8.9.0",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
@@ -53,8 +50,10 @@
     "input-otp": "1.4.1",
     "jsqr": "latest",
     "lucide-react": "^0.454.0",
+    "mongoose": "^8.9.0",
     "next": "16.2.4",
     "next-themes": "^0.4.6",
+    "pdf-lib": "^1.17.1",
     "qrcode": "latest",
     "react": "^19",
     "react-day-picker": "9.8.0",
@@ -62,6 +61,7 @@
     "react-hook-form": "^7.60.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.4",
+    "resend": "^4.0.0",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
@@ -71,6 +71,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8.5",

@@ -14,7 +14,7 @@
  * addressed document - not just a placeholder CID.
  */
 
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, degrees, type PDFFont, type PDFPage } from "pdf-lib";
 import fs from "fs";
 import path from "path";
 import { formatOrdinalDate, NAUB_VICE_CHANCELLOR_NAME } from "./certificate-utils";
@@ -213,7 +213,7 @@ export async function generateCertificatePdf(fields: CertificatePdfFields): Prom
       y: footerY - 10,
       width: stampSize,
       height: stampSize,
-      rotate: { type: "degrees" as const, angle: -8 },
+      rotate: degrees(-8),
       opacity: 0.85,
     });
   }

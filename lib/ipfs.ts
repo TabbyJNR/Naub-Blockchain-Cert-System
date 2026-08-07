@@ -40,7 +40,10 @@ export async function uploadToIpfs(
 
   try {
     const formData = new FormData();
-    const blob = new Blob([fileBuffer], { type: mimeType });
+    // Wrapped in Buffer (this module only ever runs server-side) since the
+    // stricter Uint8Array<ArrayBufferLike> type isn't directly assignable
+    // to BlobPart, but Buffer is.
+    const blob = new Blob([Buffer.from(fileBuffer)], { type: mimeType });
     formData.append("file", blob, filename);
     formData.append(
       "pinataMetadata",

@@ -25,7 +25,7 @@ export function QRCodeGenerator({ value, size = 200, className = "" }: QRCodeGen
             light: "#FFFFFF",
           },
         },
-        (error) => {
+        (error: Error | null | undefined) => {
           if (error) console.error("[v0] QR Code generation error:", error)
         },
       )

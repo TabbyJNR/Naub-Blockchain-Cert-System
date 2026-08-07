@@ -8,6 +8,7 @@ export interface BreadcrumbItem {
 
 interface BreadcrumbsProps {
   items: BreadcrumbItem[];
+  className?: string;
 }
 
 /**
@@ -15,9 +16,9 @@ interface BreadcrumbsProps {
  * depend entirely on the browser back button or the header's single
  * back link. Always starts from the Dashboard.
  */
-export function Breadcrumbs({ items }: BreadcrumbsProps) {
+export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   return (
-    <nav aria-label="Breadcrumb" className="border-b bg-muted/30">
+    <nav aria-label="Breadcrumb" className={`border-b bg-muted/30 ${className ?? ""}`.trim()}>
       <div className="container mx-auto px-4 py-2.5">
         <ol className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
           <li className="flex items-center gap-1.5">
