@@ -20,10 +20,10 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  *    erasure) without affecting the on-chain record, which remains an
  *    anonymous mathematical value.
  *  - Two roles enforce the institutional hierarchy identified in Chapter 1:
- *      SUPERADMIN_ROLE   — Registrar / Vice-Chancellor's office. Can grant
+ *      SUPERADMIN_ROLE  - Registrar / Vice-Chancellor's office. Can grant
  *                          and revoke CERTIFICATE_ROLE, and pause/unpause
  *                          the contract in an emergency.
- *      CERTIFICATE_ROLE  — Registry Admin (clerical issuing staff). Can
+ *      CERTIFICATE_ROLE - Registry Admin (clerical issuing staff). Can
  *                          issue and revoke individual certificates, but
  *                          cannot grant themselves additional privileges.
  *  - verifyCertificate is a free, read-only `view` function: any party
@@ -145,7 +145,7 @@ contract CertificateRegistry is AccessControl, Pausable {
      *         revocation timestamp.
      * @param certificateHash Hash of the certificate to revoke.
      * @param reason Human-readable reason for revocation (e.g. "Issued in
-     *        error — duplicate record").
+     * error - duplicate record").
      */
     function revokeCertificate(
         bytes32 certificateHash,
@@ -171,7 +171,7 @@ contract CertificateRegistry is AccessControl, Pausable {
     }
 
     /**
-     * @notice Verify a certificate hash. Free, read-only — callable by
+     * @notice Verify a certificate hash. Free, read-only - callable by
      *         anyone (employers, NYSC, other universities) at zero gas
      *         cost.
      * @param certificateHash Hash to verify.

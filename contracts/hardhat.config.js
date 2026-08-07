@@ -8,7 +8,7 @@ const os = require("os");
 os.platform = () => "sunos";
 
 /**
- * NAUB Blockchain Certificate System — Hardhat configuration
+ * NAUB Blockchain Certificate System - Hardhat configuration
  *
  * Networks:
  *  - hardhat:  local in-memory network used for the 32 unit tests

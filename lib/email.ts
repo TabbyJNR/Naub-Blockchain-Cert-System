@@ -3,15 +3,15 @@
  *
  * Two email types are sent:
  *
- * 1. sendCertificateIssuanceEmail — sent to the student immediately after
+ * 1. sendCertificateIssuanceEmail - sent to the student immediately after
  *    their certificate is successfully issued and anchored on-chain.
  *
- * 2. sendTamperAlert — sent to the Super Admin immediately when a suspicious
+ * 2. sendTamperAlert - sent to the Super Admin immediately when a suspicious
  *    verification attempt is detected (NOT_FOUND or REVOKED result).
  *    Satisfies NFR-11: alert delivery within 60 seconds of detection.
  *
  * Both fall back gracefully (log, do not throw) if RESEND_API_KEY is not
- * configured or the send fails — a notification failure must never block or
+ * configured or the send fails - a notification failure must never block or
  * roll back any certificate operation.
  */
 
@@ -27,7 +27,7 @@ const BASE_URL =
 const FROM_ADDRESS =
   process.env.RESEND_FROM_ADDRESS || "NAUB Certificate System <onboarding@resend.dev>";
 
-// Super Admin email address — set in environment variables
+// Super Admin email address - set in environment variables
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || "";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -248,7 +248,7 @@ export async function sendCertificateIssuanceEmail(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TAMPER ALERT EMAIL  (NFR-11 — delivered within 60 seconds of detection)
+// TAMPER ALERT EMAIL (NFR-11 - delivered within 60 seconds of detection)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface TamperAlertOptions {
@@ -289,8 +289,8 @@ export async function sendTamperAlert(options: TamperAlertOptions): Promise<void
   const device = [browser, operatingSystem, deviceType].filter(Boolean).join(" · ") || "Unknown device";
 
   const resultLabel = result === "NOT_FOUND"
-    ? "⛔ NOT FOUND — Certificate does not exist on blockchain"
-    : "⚠️ REVOKED — A revoked certificate was submitted for verification";
+    ? "⛔ NOT FOUND - Certificate does not exist on blockchain"
+    : "⚠️ REVOKED - A revoked certificate was submitted for verification";
 
   const resultColor = result === "NOT_FOUND" ? "#8B1A1A" : "#8B5E00";
   const resultBg = result === "NOT_FOUND" ? "#FDE8E8" : "#FFF8E6";
@@ -303,7 +303,7 @@ export async function sendTamperAlert(options: TamperAlertOptions): Promise<void
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>⚠️ Tamper Alert — NAUB Certificate System</title>
+  <title>⚠️ Tamper Alert - NAUB Certificate System</title>
 </head>
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:24px 16px;">
@@ -319,7 +319,7 @@ export async function sendTamperAlert(options: TamperAlertOptions): Promise<void
                 ⚠️ Suspicious Verification Alert
               </h1>
               <p style="margin:6px 0 0;font-size:12px;color:#AABBD4;">
-                Certificate Integrity Monitoring — CIMAS
+                Certificate Integrity Monitoring - CIMAS
               </p>
             </td>
           </tr>

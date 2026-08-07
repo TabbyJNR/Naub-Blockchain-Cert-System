@@ -86,7 +86,7 @@ const VerificationSchema = new Schema<VerificationDocument>(
 );
 
 /**
- * ForensicLog — Certificate Integrity Monitoring and Alert Service (CIMAS)
+ * ForensicLog - Certificate Integrity Monitoring and Alert Service (CIMAS)
  *
  * Records every suspicious verification attempt against the system:
  * - Attempts that return NOT_FOUND (hash does not exist on blockchain)

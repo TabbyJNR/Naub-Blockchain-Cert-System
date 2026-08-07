@@ -8,12 +8,12 @@ import { ForensicLogModel } from "@/lib/models";
  * Returns forensic log entries for the Super Admin dashboard.
  *
  * Query params:
- *   ?flagged=true      — return only suspicious (NOT_FOUND / REVOKED) entries
- *   ?certificateId=x   — return all entries for a specific certificate (audit trail FR-17)
- *   ?limit=50          — max entries to return (default 50, max 200)
- *   ?unread=true       — return only unacknowledged flagged entries (for bell badge count)
+ * ?flagged=true - return only suspicious (NOT_FOUND / REVOKED) entries
+ * ?certificateId=x - return all entries for a specific certificate (audit trail FR-17)
+ * ?limit=50 - max entries to return (default 50, max 200)
+ * ?unread=true - return only unacknowledged flagged entries (for bell badge count)
  *
- * No PII is stored in ForensicLog — safe to return to admin dashboard.
+ * No PII is stored in ForensicLog - safe to return to admin dashboard.
  */
 export async function GET(request: Request) {
   try {
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
  * PATCH /api/admin/forensic-log
  *
  * Marks all unacknowledged flagged entries as acknowledged.
- * Called when the Super Admin opens the notification panel — resets bell badge to 0.
+ * Called when the Super Admin opens the notification panel - resets bell badge to 0.
  */
 export async function PATCH() {
   try {

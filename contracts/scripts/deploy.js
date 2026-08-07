@@ -22,7 +22,7 @@ async function main() {
   const [deployer] = await ethers.getSigners();
 
   console.log("=".repeat(60));
-  console.log("  NAUB CertificateRegistry — Sepolia Deployment");
+  console.log(" NAUB CertificateRegistry - Sepolia Deployment");
   console.log("=".repeat(60));
   console.log(`\nDeployer wallet : ${deployer.address}`);
 
@@ -69,7 +69,7 @@ async function main() {
   console.log(`  CERTIFICATE_ROLE  : ${isCertAdmin ? "GRANTED ✓" : "NOT granted ✗"}`);
 
   console.log("\n" + "=".repeat(60));
-  console.log("  IMPORTANT — record these in your .env and Chapter 4:");
+  console.log(" IMPORTANT - record these in your .env and Chapter 4:");
   console.log("=".repeat(60));
   console.log(`CERTIFICATE_REGISTRY_ADDRESS=${contractAddress}`);
   console.log(`DEPLOYER_ADDRESS=${deployer.address}`);

@@ -82,7 +82,7 @@ interface ForensicEntry {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NOTIFICATION BELL + PANEL  (Super Admin only — FR-13, NFR-11)
+// NOTIFICATION BELL + PANEL (Super Admin only - FR-13, NFR-11)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function NotificationBell({ isSuperAdmin }: { isSuperAdmin: boolean }) {
@@ -591,7 +591,7 @@ export default function AdminDashboard() {
             </Link>
           </div>
           <div className="flex items-center gap-2">
-            {/* Notification Bell — Super Admin only */}
+            {/* Notification Bell - Super Admin only */}
             <NotificationBell isSuperAdmin={isSuperAdmin} />
             <Button
               variant="outline"

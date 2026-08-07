@@ -101,7 +101,7 @@ function CertificateAuditTrail({ certificateId }: { certificateId: string }) {
           Certificate Audit Trail
         </CardTitle>
         <CardDescription>
-          Complete verification history for this certificate — every attempt logged
+          Complete verification history for this certificate - every attempt logged
           by the Certificate Integrity Monitoring and Alert Service (CIMAS).
         </CardDescription>
       </CardHeader>
@@ -187,7 +187,7 @@ function AuditEntry({ entry }: { entry: ForensicEntry }) {
       </div>
       {entry.flagged && (
         <p className="mt-1.5 text-[10px] font-semibold text-red-600">
-          ⚠ Flagged as suspicious — Super Admin was notified
+          ⚠ Flagged as suspicious - Super Admin was notified
         </p>
       )}
     </div>
@@ -596,7 +596,7 @@ export default function CertificateDetailPage() {
           </Card>
         </div>
 
-        {/* ── 4. Certificate Audit Trail (FR-17 — NEW) ── */}
+        {/* ── 4. Certificate Audit Trail (FR-17 - NEW) ── */}
         <div className="mb-6">
           <CertificateAuditTrail certificateId={certificate.id} />
         </div>
@@ -610,7 +610,7 @@ export default function CertificateDetailPage() {
                 QR Code Verification
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Scan to instantly verify this certificate — no login required
+                Scan to instantly verify this certificate - no login required
               </p>
             </CardHeader>
             <CardContent>
@@ -624,7 +624,7 @@ export default function CertificateDetailPage() {
                 </div>
                 <div className="flex-1 space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    Anyone — employers, NYSC, other institutions — can scan this QR code
+                    Anyone - employers, NYSC, other institutions - can scan this QR code
                     or visit the verification page to confirm this certificate's authenticity
                     directly against the Ethereum Sepolia blockchain. No login or account required.
                   </p>
@@ -707,7 +707,7 @@ export default function CertificateDetailPage() {
                 <p className="text-sm text-muted-foreground">
                   This permanently deletes all personal data (name, date of birth,
                   matriculation number) from the off-chain database. The on-chain
-                  hash record remains as an anonymous value — it cannot be erased
+                  hash record remains as an anonymous value - it cannot be erased
                   or modified.
                 </p>
               </CardHeader>

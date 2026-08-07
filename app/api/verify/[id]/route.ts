@@ -14,7 +14,7 @@ import { sendTamperAlert } from "@/lib/email";
  * Attempts returning NOT_FOUND or REVOKED are flagged as suspicious and
  * trigger an instant email alert to the Super Admin (NFR-11: within 60 seconds).
  *
- * No PII is stored in the ForensicLog — only the hash submitted, the result,
+ * No PII is stored in the ForensicLog - only the hash submitted, the result,
  * network metadata, and device fingerprint from headers.
  *
  * Note: ua-parser-js is intentionally NOT used here to avoid a build-time
@@ -190,7 +190,7 @@ export async function GET(
         console.error("[ForensicLog] Error logging REVOKED:", err)
       );
     } else {
-      // VALID — log without flagging (for full audit trail FR-17)
+      // VALID - log without flagging (for full audit trail FR-17)
       logOnly({
         hashSubmitted: id,
         result: "VALID",
@@ -266,7 +266,7 @@ interface LogPayload {
 }
 
 /**
- * logAndAlert — saves a flagged ForensicLog entry and sends tamper alert.
+ * logAndAlert - saves a flagged ForensicLog entry and sends tamper alert.
  * Used for NOT_FOUND and REVOKED results (suspicious attempts).
  */
 async function logAndAlert(payload: LogPayload): Promise<void> {
@@ -306,7 +306,7 @@ async function logAndAlert(payload: LogPayload): Promise<void> {
 }
 
 /**
- * logOnly — saves an unflagged ForensicLog entry for VALID verifications.
+ * logOnly - saves an unflagged ForensicLog entry for VALID verifications.
  * Provides the complete verification history for the Certificate Audit Trail (FR-17).
  */
 async function logOnly(payload: LogPayload): Promise<void> {

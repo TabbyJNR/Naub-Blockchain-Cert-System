@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 
 /**
- * CertificateRegistry test suite (Chapter 3 — 32 unit tests)
+ * CertificateRegistry test suite (Chapter 3 - 32 unit tests)
  *
  * Organised into six groups matching the contract's responsibilities:
  *  1. Deployment & roles
