@@ -14,6 +14,7 @@ import {
   FileCheck,
   GraduationCap,
   KeyRound,
+  Lock,
   QrCode,
   Search,
   Shield,
@@ -36,6 +37,9 @@ export default function HomePage() {
             </Link>
             <Link href="/verify">
               <Button variant="outline">Verify</Button>
+            </Link>
+            <Link href="/admin">
+              <Button>Registry Login</Button>
             </Link>
           </nav>
         </div>
@@ -75,6 +79,12 @@ export default function HomePage() {
                 <Button size="default" variant="outline" className="w-full gap-2 bg-white/70 sm:w-auto">
                   <UserRoundSearch className="h-4 w-4" />
                   Holder Portal
+                </Button>
+              </Link>
+              <Link href="/admin">
+                <Button size="default" variant="secondary" className="w-full gap-2 sm:w-auto">
+                  <Lock className="h-4 w-4" />
+                  Registry Admin
                 </Button>
               </Link>
             </div>
